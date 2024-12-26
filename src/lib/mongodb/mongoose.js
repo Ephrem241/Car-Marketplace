@@ -8,18 +8,15 @@ export const connect = async () => {
     console.log("Already connected to MongoDB");
     return;
   }
-  if (!process.env.MONGODB_URI) {
-    console.log("MONGODB_URI is not defined");
-    return;
-  }
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: "car-marketplace",
+      dbName: "next-blog",
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
     console.log("Connected to MongoDB");
     initialized = true;
   } catch (error) {
     console.log("Error connecting to MongoDB:", error);
-    throw error;
   }
 };
