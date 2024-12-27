@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Alert, Button, FileInput, Select, TextInput } from "flowbite-react";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -11,18 +11,18 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { app } from "@/fairbase";
+import { useRouter } from "next/navigation";
 
 export default function CarAddForm() {
   const [fields, setFields] = useState({
-    make: "",
-    model: "",
-    year: "",
-    mileage: "",
-    fuel_type: "",
-    transmission: "",
-    price: "",
-    features: [],
-    images: [],
+    make: "Toyota",
+    model: "Corolla",
+    year: 2020,
+    mileage: 15000,
+    fuel_type: "Petrol",
+    transmission: "Automatic",
+    price: 20000,
+    features: ["Air Conditioning", "GPS"],
   });
 
   const [submitError, setSubmitError] = useState(null);
@@ -30,6 +30,10 @@ export default function CarAddForm() {
   const [imageUploadProgress, setImageUploadProgress] = useState(null);
   const [formData, setFormData] = useState({});
   const [file, setFile] = useState(null);
+  const [publishError, setPublishError] = useState(null);
+  const router = useRouter();
+
+  console.log(formData);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -95,21 +99,28 @@ export default function CarAddForm() {
         }
       });
 
-      const res = await fetch("/api/cars", {
+      const res = await fetch("/api/post/create", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...Object.fromEntries(formData),
+          userMongoId: user.publicMetadata.userMongoId,
+        }),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const errorData = await res.json();
-        setSubmitError(errorData.message || "Failed to submit the form");
+        setPublishError(data.message);
         return;
       }
-
-      setSubmitError(null);
-      alert("Car added successfully!");
+      if (res.ok) {
+        setPublishError(null);
+        router.push(`/post/${data.slug}`);
+      }
     } catch (error) {
-      setSubmitError("Something went wrong");
+      setPublishError("Something went wrong");
     }
   };
 
@@ -156,7 +167,7 @@ export default function CarAddForm() {
         value={fields.fuel_type}
         onChange={handleChange}
       >
-        <option value="">Select Fuel Type</option>
+        <option value="uncategorized">Select Fuel Type</option>
         <option value="Petrol">Petrol</option>
         <option value="Diesel">Diesel</option>
         <option value="Electric">Electric</option>
@@ -192,8 +203,8 @@ export default function CarAddForm() {
             name="features"
             value="Air Conditioning"
             className="mr-2"
-            checked={fields["Feature Air Conditioning"]}
-            onChange={handleChange}
+            checked={fields.features.includes("Air Conditioning")}
+            onChange={handleFeaturesChange}
           />
           <label htmlFor="feature_air_conditioning">Air Conditioning</label>
         </div>
@@ -204,8 +215,8 @@ export default function CarAddForm() {
             name="features"
             value="GPS"
             className="mr-2"
-            checked={fields["Feature GPS"]}
-            onChange={handleChange}
+            checked={fields.features.includes("GPS")}
+            onChange={handleFeaturesChange}
           />
           <label htmlFor="feature_gps">GPS</label>
         </div>
@@ -216,8 +227,8 @@ export default function CarAddForm() {
             name="features"
             value="Leather Seats"
             className="mr-2"
-            checked={fields["Feature Leather Seats"]}
-            onChange={handleChange}
+            checked={fields.features.includes("Leather Seats")}
+            onChange={handleFeaturesChange}
           />
           <label htmlFor="feature_leather_seats">Leather Seats</label>
         </div>
@@ -228,8 +239,8 @@ export default function CarAddForm() {
             name="features"
             value="Heated Seats"
             className="mr-2"
-            checked={fields["Feature Heated Seats"]}
-            onChange={handleChange}
+            checked={fields.features.includes("Heated Seats")}
+            onChange={handleFeaturesChange}
           />
           <label htmlFor="feature_heated_seats">Heated Seats</label>
         </div>
@@ -240,8 +251,8 @@ export default function CarAddForm() {
             name="features"
             value="Sunroof"
             className="mr-2"
-            checked={fields["Feature Sunroof"]}
-            onChange={handleChange}
+            checked={fields.features.includes("Sunroof")}
+            onChange={handleFeaturesChange}
           />
           <label htmlFor="feature_sunroof">Sunroof</label>
         </div>
@@ -252,8 +263,8 @@ export default function CarAddForm() {
             name="features"
             value="Backup Camera"
             className="mr-2"
-            checked={fields["Feature Backup Camera"]}
-            onChange={handleChange}
+            checked={fields.features.includes("Backup Camera")}
+            onChange={handleFeaturesChange}
           />
           <label htmlFor="feature_backup_camera">Backup Camera</label>
         </div>
