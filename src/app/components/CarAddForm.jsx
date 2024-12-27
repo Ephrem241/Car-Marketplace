@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 import { Alert, Button, FileInput, Select, TextInput } from "flowbite-react";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import {
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { app } from "@/fairbase";
 
 export default function CarAddForm() {
   const [fields, setFields] = useState({
@@ -21,6 +28,8 @@ export default function CarAddForm() {
   const [submitError, setSubmitError] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(null);
   const [imageUploadProgress, setImageUploadProgress] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [file, setFile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,7 +46,7 @@ export default function CarAddForm() {
     });
   };
 
-  const handleUpdloadImage = async () => {
+  const handleUploadImage = async () => {
     try {
       if (!file) {
         setImageUploadError("Please select an image");
@@ -175,7 +184,7 @@ export default function CarAddForm() {
       />
 
       <h3 className="text-lg font-semibold">Features</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         <div>
           <input
             type="checkbox"
@@ -183,8 +192,8 @@ export default function CarAddForm() {
             name="features"
             value="Air Conditioning"
             className="mr-2"
-            checked={fields.features.includes("Air Conditioning")}
-            onChange={handleFeaturesChange}
+            checked={fields["Feature Air Conditioning"]}
+            onChange={handleChange}
           />
           <label htmlFor="feature_air_conditioning">Air Conditioning</label>
         </div>
@@ -195,8 +204,8 @@ export default function CarAddForm() {
             name="features"
             value="GPS"
             className="mr-2"
-            checked={fields.features.includes("GPS")}
-            onChange={handleFeaturesChange}
+            checked={fields["Feature GPS"]}
+            onChange={handleChange}
           />
           <label htmlFor="feature_gps">GPS</label>
         </div>
@@ -207,8 +216,8 @@ export default function CarAddForm() {
             name="features"
             value="Leather Seats"
             className="mr-2"
-            checked={fields.features.includes("Leather Seats")}
-            onChange={handleFeaturesChange}
+            checked={fields["Feature Leather Seats"]}
+            onChange={handleChange}
           />
           <label htmlFor="feature_leather_seats">Leather Seats</label>
         </div>
@@ -219,8 +228,8 @@ export default function CarAddForm() {
             name="features"
             value="Heated Seats"
             className="mr-2"
-            checked={fields.features.includes("Heated Seats")}
-            onChange={handleFeaturesChange}
+            checked={fields["Feature Heated Seats"]}
+            onChange={handleChange}
           />
           <label htmlFor="feature_heated_seats">Heated Seats</label>
         </div>
@@ -231,8 +240,8 @@ export default function CarAddForm() {
             name="features"
             value="Sunroof"
             className="mr-2"
-            checked={fields.features.includes("Sunroof")}
-            onChange={handleFeaturesChange}
+            checked={fields["Feature Sunroof"]}
+            onChange={handleChange}
           />
           <label htmlFor="feature_sunroof">Sunroof</label>
         </div>
@@ -243,31 +252,31 @@ export default function CarAddForm() {
             name="features"
             value="Backup Camera"
             className="mr-2"
-            checked={fields.features.includes("Backup Camera")}
-            onChange={handleFeaturesChange}
+            checked={fields["Feature Backup Camera"]}
+            onChange={handleChange}
           />
           <label htmlFor="feature_backup_camera">Backup Camera</label>
         </div>
       </div>
-      <h3 className="text-lg  gap-2">
-        <label className=" font-semibold mb-2" htmlFor="images">
+      <h3 className="gap-2 text-lg">
+        <label className="mb-2 font-semibold " htmlFor="images">
           Images (Select up to 4 images)
         </label>
       </h3>
-      <div className="flex gap-4 items-center justify-between border-4 border-teal-500 border-dotted p-3">
+      <div className="flex items-center justify-between gap-4 p-3 border-4 border-teal-500 border-dotted">
         <FileInput
           id="images"
           name="images"
           accept="image/*"
           multiple
-          onChange={(e) => setFile(e.target.files[0])}
+          onChange={(e) => setFile(Array.from(e.target.files))}
         />
         <Button
           type="button"
           gradientDuoTone="purpleToBlue"
           size="sm"
           outline
-          onClick={handleUpdloadImage}
+          onClick={handleUploadImage}
           disabled={imageUploadProgress}
         >
           {imageUploadProgress ? (
