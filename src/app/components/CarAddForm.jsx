@@ -1,312 +1,478 @@
-"use client";
-
-import { useState } from "react";
-import { Alert, Button, FileInput, Select, TextInput } from "flowbite-react";
-import { CircularProgressbar } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
-import { app } from "@/fairbase";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import React from "react";
 
 export default function CarAddForm() {
   const [fields, setFields] = useState({
+    kph: 25,
+    class: "SUV",
+    drive: "AWD",
+    fuel_type: "Diesel",
     make: "Toyota",
-    model: "Corolla",
-    year: 2020,
-    mileage: 15000,
-    fuel_type: "Petrol",
-    transmission: "Automatic",
-    price: 20000,
-    features: ["Air Conditioning", "GPS"],
+    model: "RAV4",
+    transmission: "a",
+    year: 2021,
+    price: 30000,
+    features: [],
+    images: [],
+    seller_info: {
+      name: "",
+      email: "eph1234@epicmail.com",
+      phone: "",
+    },
+    description:
+      " This is a sample car description. You can add more details as needed. Enjoy your ride!",
   });
-
-  const [submitError, setSubmitError] = useState(null);
-  const [imageUploadError, setImageUploadError] = useState(null);
-  const [imageUploadProgress, setImageUploadProgress] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [file, setFile] = useState(null);
   const [publishError, setPublishError] = useState(null);
   const router = useRouter();
 
-  console.log(formData);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFields((prevFields) => ({ ...prevFields, [name]: value }));
+    if (name.includes(".")) {
+      const [outerKey, innerKey] = name.split(".");
+      setFields((prevFields) => ({
+        ...prevFields,
+        [outerKey]: { ...prevFields[outerKey], [innerKey]: value },
+      }));
+    } else {
+      setFields((prevFields) => ({ ...prevFields, [name]: value }));
+    }
   };
 
   const handleFeaturesChange = (e) => {
-    const { value, checked } = e.target;
-    setFields((prevFields) => {
-      const updatedFeatures = checked
+    const { checked, value } = e.target;
+    setFields((prevFields) => ({
+      ...prevFields,
+      features: checked
         ? [...prevFields.features, value]
-        : prevFields.features.filter((feature) => feature !== value);
-      return { ...prevFields, features: updatedFeatures };
-    });
+        : prevFields.features.filter((feature) => feature !== value),
+    }));
   };
 
-  const handleUploadImage = async () => {
-    try {
-      if (!file) {
-        setImageUploadError("Please select an image");
-        return;
-      }
-      setImageUploadError(null);
-      const storage = getStorage(app);
-      const fileName = new Date().getTime() + "-" + file.name;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageUploadProgress(progress.toFixed(0));
-        },
-        (error) => {
-          setImageUploadError("Image upload failed");
-          setImageUploadProgress(null);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            setImageUploadProgress(null);
-            setImageUploadError(null);
-            setFormData({ ...formData, image: downloadURL });
-          });
-        }
-      );
-    } catch (error) {
-      setImageUploadError("Image upload failed");
-      setImageUploadProgress(null);
-      console.log(error);
+  const handleImageChange = (e) => {
+    const { files } = e.target;
+    if (files.length > 4) {
+      setPublishError("You can only upload up to 4 images.");
+      return;
     }
+    setFields((prevFields) => ({
+      ...prevFields,
+      images: Array.from(files),
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const formData = new FormData();
-      Object.keys(fields).forEach((key) => {
-        if (key === "images") {
-          fields[key].forEach((file) => formData.append(key, file));
-        } else {
-          formData.append(key, fields[key]);
-        }
-      });
-
-      const res = await fetch("/api/post/create", {
+      const response = await fetch("/api/cars", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...Object.fromEntries(formData),
+          ...fields,
           userMongoId: user.publicMetadata.userMongoId,
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setPublishError(data.message);
+      if (!response.ok) {
+        setPublishError("Failed to add car.");
         return;
       }
-      if (res.ok) {
-        setPublishError(null);
-        router.push(`/post/${data.slug}`);
+      if (response.ok) {
+        router.push("/dashboard/add");
       }
     } catch (error) {
-      setPublishError("Something went wrong");
+      setPublishError(error.message);
     }
   };
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <TextInput
-        id="make"
-        name="make"
-        placeholder="Enter car make"
-        required
-        value={fields.make}
-        onChange={handleChange}
-      />
-      <TextInput
-        id="model"
-        name="model"
-        placeholder="Enter car model"
-        required
-        value={fields.model}
-        onChange={handleChange}
-      />
-      <TextInput
-        id="year"
-        name="year"
-        type="number"
-        placeholder="Enter car year"
-        required
-        value={fields.year}
-        onChange={handleChange}
-      />
-      <TextInput
-        id="mileage"
-        name="mileage"
-        type="number"
-        placeholder="Enter mileage"
-        required
-        value={fields.mileage}
-        onChange={handleChange}
-      />
-      <Select
-        id="fuel_type"
-        name="fuel_type"
-        required
-        value={fields.fuel_type}
-        onChange={handleChange}
-      >
-        <option value="uncategorized">Select Fuel Type</option>
-        <option value="Petrol">Petrol</option>
-        <option value="Diesel">Diesel</option>
-        <option value="Electric">Electric</option>
-        <option value="Hybrid">Hybrid</option>
-      </Select>
-      <Select
-        id="transmission"
-        name="transmission"
-        required
-        value={fields.transmission}
-        onChange={handleChange}
-      >
-        <option value="">Select Transmission</option>
-        <option value="Manual">Manual</option>
-        <option value="Automatic">Automatic</option>
-      </Select>
-      <TextInput
-        id="price"
-        name="price"
-        type="number"
-        placeholder="Enter price"
-        required
-        value={fields.price}
-        onChange={handleChange}
-      />
+    <form onSubmit={handleSubmit}>
+      <h2 className="text-3xl text-center font-semibold mb-6">Add Car</h2>
 
-      <h3 className="text-lg font-semibold">Features</h3>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <div>
-          <input
-            type="checkbox"
-            id="feature_air_conditioning"
-            name="features"
-            value="Air Conditioning"
-            className="mr-2"
-            checked={fields.features.includes("Air Conditioning")}
-            onChange={handleFeaturesChange}
-          />
-          <label htmlFor="feature_air_conditioning">Air Conditioning</label>
+      <div className="mb-4">
+        <label
+          htmlFor="car_type"
+          className="block text-gray-700 font-bold mb-2"
+        >
+          Car Type
+        </label>
+        <select
+          id="class"
+          name="class"
+          className="border rounded w-full py-2 px-3"
+          required
+          value={fields.class}
+          onChange={handleChange}
+        >
+          <option value="SUV">SUV</option>
+          <option value="Sedan">Sedan</option>
+          <option value="Truck">Truck</option>
+          <option value="Hatchback">Hatchback</option>
+          <option value="Convertible">Convertible</option>
+          <option value="Coupe">Coupe</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 font-bold mb-2">Car make</label>
+        <input
+          type="text"
+          id="make"
+          name="make"
+          className="border rounded w-full py-2 px-3 mb-2"
+          placeholder="e.g. Toyota"
+          required
+          value={fields.make}
+          onChange={handleChange}
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 font-bold mb-2">Car model</label>
+        <input
+          type="text"
+          id="model"
+          name="model"
+          className="border rounded w-full py-2 px-3 mb-2"
+          placeholder="e.g. RAV4"
+          required
+          value={fields.model}
+          onChange={handleChange}
+        />
+      </div>
+
+      <div className="mb-4">
+        <label
+          htmlFor="description"
+          className="block text-gray-700 font-bold mb-2"
+        >
+          Description
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          className="border rounded w-full py-2 px-3"
+          rows="4"
+          placeholder="Enter car description"
+          required
+          value={fields.description}
+          onChange={handleChange}
+        ></textarea>
+      </div>
+
+      <div className="mb-4 flex flex-wrap">
+        <div className="w-full sm:w-1/3 pr-2">
+          <label
+            htmlFor="transmission"
+            className="block text-gray-700 font-bold mb-2"
+          >
+            Transmission
+          </label>
+          <select
+            id="transmission"
+            name="transmission"
+            className="border rounded w-full py-2 px-3"
+            required
+            value={fields.transmission}
+            onChange={handleChange}
+          >
+            <option value="">Select Transmission</option>
+            <option value="a">a</option>
+            <option value="m">m</option>
+          </select>
         </div>
-        <div>
-          <input
-            type="checkbox"
-            id="feature_gps"
-            name="features"
-            value="GPS"
-            className="mr-2"
-            checked={fields.features.includes("GPS")}
-            onChange={handleFeaturesChange}
-          />
-          <label htmlFor="feature_gps">GPS</label>
+        <div className="w-full sm:w-1/3 px-2">
+          <label htmlFor="drive" className="block text-gray-700 font-bold mb-2">
+            Drive
+          </label>
+          <select
+            id="drive"
+            name="drive"
+            className="border rounded w-full py-2 px-3"
+            required
+            value={fields.drive}
+            onChange={handleChange}
+          >
+            <option value="">Select Drive Type</option>
+            <option value="FWD"> FWD</option>
+            <option value="RWD"> RWD</option>
+            <option value="AWD"> AWD</option>
+            <option value="4WD"> 4WD</option>
+          </select>
         </div>
-        <div>
+        <div className="w-full sm:w-1/3 pl-2">
+          <label htmlFor="kph" className="block text-gray-700 font-bold mb-2">
+            KPH
+          </label>
           <input
-            type="checkbox"
-            id="feature_leather_seats"
-            name="features"
-            value="Leather Seats"
-            className="mr-2"
-            checked={fields.features.includes("Leather Seats")}
-            onChange={handleFeaturesChange}
+            type="number"
+            id="kph"
+            name="kph"
+            className="border rounded w-full py-2 px-3"
+            required
+            value={fields.kph}
+            onChange={handleChange}
           />
-          <label htmlFor="feature_leather_seats">Leather Seats</label>
         </div>
-        <div>
+        <div className="w-full sm:w-1/3 pl-2">
+          <label htmlFor="year" className="block text-gray-700 font-bold mb-2">
+            Year
+          </label>
           <input
-            type="checkbox"
-            id="feature_heated_seats"
-            name="features"
-            value="Heated Seats"
-            className="mr-2"
-            checked={fields.features.includes("Heated Seats")}
-            onChange={handleFeaturesChange}
+            type="number"
+            id="year"
+            name="year"
+            className="border rounded w-full py-2 px-3"
+            required
+            value={fields.year}
+            onChange={handleChange}
           />
-          <label htmlFor="feature_heated_seats">Heated Seats</label>
         </div>
-        <div>
-          <input
-            type="checkbox"
-            id="feature_sunroof"
-            name="features"
-            value="Sunroof"
-            className="mr-2"
-            checked={fields.features.includes("Sunroof")}
-            onChange={handleFeaturesChange}
-          />
-          <label htmlFor="feature_sunroof">Sunroof</label>
+        <div className="w-full sm:w-1/3 pl-2">
+          <label
+            htmlFor="fuel_type"
+            className="block text-gray-700 font-bold mb-2"
+          >
+            Fuel Type
+          </label>
+          <select
+            id="fuel_type"
+            name="fuel_type"
+            className="border rounded w-full py-2 px-3"
+            required
+            value={fields.fuel_type}
+            onChange={handleChange}
+          >
+            <option value="">Select Fuel Type</option>
+            <option value="Petrol">Petrol</option>
+            <option value="Diesel">Diesel</option>
+            <option value="Electric">Electric</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
-        <div>
+        <div className="w-full sm:w-1/3 pl-2">
+          <label htmlFor="price" className="block text-gray-700 font-bold mb-2">
+            Car Price
+          </label>
           <input
-            type="checkbox"
-            id="feature_backup_camera"
-            name="features"
-            value="Backup Camera"
-            className="mr-2"
-            checked={fields.features.includes("Backup Camera")}
-            onChange={handleFeaturesChange}
+            type="number"
+            id="price"
+            name="price"
+            className="border rounded w-full py-2 px-3"
+            required
+            value={fields.price}
+            onChange={handleChange}
           />
-          <label htmlFor="feature_backup_camera">Backup Camera</label>
         </div>
       </div>
-      <h3 className="gap-2 text-lg">
-        <label className="mb-2 font-semibold " htmlFor="images">
+
+      <div className="mb-4">
+        <label className="block text-gray-700 font-bold mb-2">Features</label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div>
+            <input
+              type="checkbox"
+              id="feature_CD Player"
+              name="feature"
+              value="CD Player"
+              className="mr-2"
+              checked={fields.features.includes("CD Player")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_CD Player">CD Player</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Bluetooth"
+              name="feature"
+              value="Bluetooth"
+              className="mr-2"
+              checked={fields.features.includes("Bluetooth")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Bluetooth">Bluetooth</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Navigation"
+              name="feature"
+              value="Navigation"
+              className="mr-2"
+              checked={fields.features.includes("Navigation")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Navigation">Navigation</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Sunroof"
+              name="feature"
+              value="Sunroof"
+              className="mr-2"
+              checked={fields.features.includes("Sunroof")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Sunroof">Sunroof</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Leather_Seats"
+              name="feature"
+              value="Leather Seats"
+              className="mr-2"
+              checked={fields.features.includes("Leather Seats")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Leather_Seats">Leather Seats</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Backup_Camera"
+              name="feature"
+              value="Backup Camera"
+              className="mr-2"
+              checked={fields.features.includes("Backup Camera")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Backup_Camera">Backup Camera</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Cruise_Control"
+              name="feature"
+              value="Cruise Control"
+              className="mr-2"
+              checked={fields.features.includes("Cruise Control")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Cruise_Control">Cruise Control</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Heated_Seats"
+              name="feature"
+              value="Heated Seats"
+              className="mr-2"
+              checked={fields.features.includes("Heated Seats")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Heated_Seats">Heated Seats</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Satellite_Radio"
+              name="feature"
+              value="Satellite Radio"
+              className="mr-2"
+              checked={fields.features.includes("Satellite Radio")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Satellite_Radio">Satellite Radio</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="feature_Parking_Sensors"
+              name="feature"
+              value="Parking Sensors"
+              className="mr-2"
+              checked={fields.features.includes("Parking Sensors")}
+              onChange={handleFeaturesChange}
+            />
+            <label htmlFor="feature_Parking_Sensors">Parking Sensors</label>
+          </div>
+        </div>
+      </div>
+      <div className="mb-4">
+        <label
+          htmlFor="seller_name"
+          className="block text-gray-700 font-bold mb-2"
+        >
+          Seller Name
+        </label>
+        <input
+          type="text"
+          id="seller_name"
+          name="seller_info.name"
+          className="border rounded w-full py-2 px-3"
+          placeholder="Name"
+          value={fields.seller_info.name}
+          onChange={handleChange}
+        />
+      </div>
+      <div className="mb-4">
+        <label
+          htmlFor="seller_email"
+          className="block text-gray-700 font-bold mb-2"
+        >
+          Seller Email
+        </label>
+        <input
+          type="email"
+          id="seller_email"
+          name="seller_info.email"
+          className="border rounded w-full py-2 px-3"
+          placeholder="Email address"
+          required
+          value={fields.seller_info.email}
+          onChange={handleChange}
+        />
+      </div>
+
+      <div className="mb-4">
+        <label
+          htmlFor="seller_phone"
+          className="block text-gray-700 font-bold mb-2"
+        >
+          Seller Phone
+        </label>
+        <input
+          type="tel"
+          id="seller_phone"
+          name="seller_info.phone"
+          className="border rounded w-full py-2 px-3"
+          placeholder="Phone"
+          value={fields.seller_info.phone}
+          onChange={handleChange}
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="images" className="block text-gray-700 font-bold mb-2">
           Images (Select up to 4 images)
         </label>
-      </h3>
-      <div className="flex items-center justify-between gap-4 p-3 border-4 border-teal-500 border-dotted">
-        <FileInput
+        <input
+          type="file"
           id="images"
           name="images"
+          className="border rounded w-full py-2 px-3"
           accept="image/*"
           multiple
-          onChange={(e) => setFile(Array.from(e.target.files))}
+          onChange={handleImageChange}
+          required
         />
-        <Button
-          type="button"
-          gradientDuoTone="purpleToBlue"
-          size="sm"
-          outline
-          onClick={handleUploadImage}
-          disabled={imageUploadProgress}
-        >
-          {imageUploadProgress ? (
-            <div className="w-16 h-16 ">
-              <CircularProgressbar
-                value={imageUploadProgress}
-                text={`${imageUploadProgress || 0}%`}
-              />
-            </div>
-          ) : (
-            "Upload Image"
-          )}
-        </Button>
       </div>
+      {publishError && (
+        <p className="text-red-500 font-semibold mt-4">{publishError}</p>
+      )}
 
-      {submitError && <Alert color="failure">{submitError}</Alert>}
-      <Button type="submit" gradientDuoTone="purpleToPink">
-        Add Car
-      </Button>
+      <div>
+        <button
+          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline"
+          type="submit"
+        >
+          Add Car
+        </button>
+      </div>
     </form>
   );
 }

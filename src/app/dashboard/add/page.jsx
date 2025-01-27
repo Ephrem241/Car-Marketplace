@@ -1,0 +1,29 @@
+"use client";
+
+import CarAddForm from "@/app/components/CarAddForm";
+import { useUser } from "@clerk/nextjs";
+
+export default function AddCarPage() {
+  const { isSignedIn, user, isLoaded } = useUser();
+
+  if (!isLoaded) {
+    return null;
+  }
+  if (isSignedIn && user.publicMetadata.isAdmin) {
+    return (
+      <section className="bg-blue-50">
+        <div className="container m-auto max-w-2xl py-24">
+          <div className="bg-white px-6 py-8 mb-4 shadow-md rounded-md border m-4 md:m-0">
+            <CarAddForm />
+          </div>
+        </div>
+      </section>
+    );
+  } else {
+    return (
+      <h1 classNameName="text-center text-3xl my-7 font-semibold">
+        You are not authorized to view this page
+      </h1>
+    );
+  }
+}

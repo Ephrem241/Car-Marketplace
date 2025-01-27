@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import ThemeCom from "./components/ThemeCom";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeModeScript } from "flowbite-react";
+import Footer from "./components/Footer";
 
 export const metadata = {
   title: "Create Next App",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
             <ThemeCom>
               <Header />
               {children}
+              <Footer />
             </ThemeCom>
           </ThemeProvider>
         </body>
