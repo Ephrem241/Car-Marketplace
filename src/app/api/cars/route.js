@@ -1,5 +1,5 @@
-import Car from "@/lib/models/Car";
-import connect from "@/lib/mongodb/mongoose";
+import { connect } from "../../../lib/mongodb/mongoose";
+import Car from "../../../lib/models/Car";
 
 import { currentUser } from "@clerk/nextjs/server";
 
