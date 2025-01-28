@@ -1,5 +1,5 @@
-import Car from "@/lib/models/Car";
-import connect from "@/lib/mongodb/mongoose";
+import Car from "../../../../lib/models/Car.js";
+import connect from "../../../../lib/mongodb/mongoose.js";
 
 export const GET = async (request, { params }) => {
   try {
