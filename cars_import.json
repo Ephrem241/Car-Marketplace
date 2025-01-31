@@ -1,7 +1,7 @@
 [
   {
     "owner": "admin",
-    "city_mpg": 25,
+    "kph": 25,
     "class": "SUV",
     "drive": "AWD",
     "fuel_type": "Gasoline",
@@ -19,7 +19,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 30,
+    "kph": 30,
     "class": "Sedan",
     "drive": "FWD",
     "fuel_type": "Gasoline",
@@ -37,7 +37,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 20,
+    "kph": 20,
     "class": "Truck",
     "drive": "RWD",
     "fuel_type": "Diesel",
@@ -60,7 +60,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 28,
+    "kph": 28,
     "class": "Hatchback",
     "drive": "FWD",
     "fuel_type": "Gasoline",
@@ -83,7 +83,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 22,
+    "kph": 22,
     "class": "Coupe",
     "drive": "RWD",
     "fuel_type": "Gasoline",
@@ -101,7 +101,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 24,
+    "kph": 24,
     "class": "SUV",
     "drive": "AWD",
     "fuel_type": "Hybrid",
@@ -124,7 +124,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 26,
+    "kph": 26,
     "class": "Sedan",
     "drive": "FWD",
     "fuel_type": "Gasoline",
@@ -147,7 +147,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 18,
+    "kph": 18,
     "class": "SUV",
     "drive": "4WD",
     "fuel_type": "Gasoline",
@@ -170,7 +170,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 29,
+    "kph": 29,
     "class": "Hatchback",
     "drive": "FWD",
     "fuel_type": "Electric",
@@ -193,7 +193,7 @@
   },
   {
     "owner": "admin",
-    "city_mpg": 21,
+    "kph": 21,
     "class": "Convertible",
     "drive": "RWD",
     "fuel_type": "Gasoline",
