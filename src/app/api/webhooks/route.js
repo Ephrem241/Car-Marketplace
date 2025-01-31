@@ -12,7 +12,7 @@ export async function POST(req) {
 
   // Create new Svix instance with secret
   const wh = new Webhook(SIGNING_SECRET);
-  s;
+
   // Get headers
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
@@ -57,7 +57,7 @@ export async function POST(req) {
     console.log("userId:", evt.data.id);
   }
 
-  if (evt.type === "user.updated") {
+  if (evt.type === "updated") {
     console.log("user is updated", evt.data.id);
   }
 
