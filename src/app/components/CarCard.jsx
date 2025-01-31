@@ -47,7 +47,7 @@ export default function CarCard({ car }) {
           </p>
           <p>
             <Image src="/gas.svg" width={20} height={20} alt="seat" />
-            {car.city_mpg} <span className="md:hidden lg:inline">MPG</span>
+            {car.kmp} <span className="md:hidden lg:inline">KMP</span>
           </p>
           <p>
             <span className="hidden sm:inline">{car.year} </span>
