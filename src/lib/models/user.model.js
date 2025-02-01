@@ -37,12 +37,6 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    bookmarks: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Car",
-      },
-    ],
   },
   { timestamps: true }
 );

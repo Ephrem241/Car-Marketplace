@@ -1,5 +1,5 @@
 import { Schema, model, models } from "mongoose";
-const CarSchema = new Schema(
+const postSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -25,5 +25,5 @@ const CarSchema = new Schema(
   }
 );
 
-const Car = models.Car || model("Car", CarSchema);
-export default Car;
+const Post = models.Post || model("Post", postSchema);
+export default Post;

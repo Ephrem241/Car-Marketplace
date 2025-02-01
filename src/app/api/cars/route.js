@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
-
 import connect from "../../../lib/mongodb/mongoose.js";
 import Car from "../../../lib/models/car.model.js";
+import Post from "../../../lib/models/post.model.js";
 
 export const GET = async (request) => {
   try {
@@ -42,7 +42,7 @@ export const POST = async (request) => {
       .getAll("images")
       .filter((image) => image.name !== "");
 
-    const carData = {
+    const carData = await Post.create({
       make: formData.get("make"),
       model: formData.get("model"),
       year: formData.get("year"),
@@ -61,10 +61,10 @@ export const POST = async (request) => {
         phone: formData.get("seller_info.phone"),
       },
       userId: user.publicMetadata.userMongoId,
-    };
-    console.log(carData);
+    });
 
-    return new Response(JSON.stringify({ message: "Success" }), {
+    await carData.save();
+    return new Response("Car Added Successfully", {
       status: 200,
     });
   } catch (error) {
