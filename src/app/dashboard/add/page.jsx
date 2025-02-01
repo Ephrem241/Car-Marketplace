@@ -21,7 +21,7 @@ export default function AddCarPage() {
     );
   } else {
     return (
-      <h1 classNameName="text-center text-3xl my-7 font-semibold">
+      <h1 className="text-center text-3xl my-7 font-semibold">
         You are not authorized to view this page
       </h1>
     );
