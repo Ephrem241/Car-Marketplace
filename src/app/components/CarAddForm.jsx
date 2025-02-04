@@ -1,8 +1,15 @@
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import React from "react";
+import { useSession } from "@clerk/nextjs";
 
 export default function CarAddForm() {
+  const { session } = useSession();
+  const [publishError, setPublishError] = useState(null);
+  const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [fields, setFields] = useState({
     kph: 25,
     class: "SUV",
@@ -15,28 +22,31 @@ export default function CarAddForm() {
     price: 30000,
     features: [],
     images: [],
-    seller_info: {
-      name: "",
-      email: "eph1234@epicmail.com",
-      phone: "",
-    },
-    description:
-      " This is a sample car description. You can add more details as needed. Enjoy your ride!",
+    description: "This is a sample car description.",
   });
-  const [publishError, setPublishError] = useState(null);
-  const router = useRouter();
+
+  useEffect(() => {
+    if (!session) {
+      router.push("/login");
+      return;
+    }
+
+    const user = session.user;
+    if (user?.publicMetadata?.isAdmin) {
+      setIsAdmin(true);
+    } else {
+      router.push("/"); // Redirect non-admins
+    }
+    setLoading(false);
+  }, [session, router]);
+
+  if (loading) return <p>Loading...</p>;
+
+  if (!isAdmin) return <p>Unauthorized</p>;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes(".")) {
-      const [outerKey, innerKey] = name.split(".");
-      setFields((prevFields) => ({
-        ...prevFields,
-        [outerKey]: { ...prevFields[outerKey], [innerKey]: value },
-      }));
-    } else {
-      setFields((prevFields) => ({ ...prevFields, [name]: value }));
-    }
+    setFields((prevFields) => ({ ...prevFields, [name]: value }));
   };
 
   const handleFeaturesChange = (e) => {
@@ -63,44 +73,54 @@ export default function CarAddForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setPublishError(null);
+
+    const formData = new FormData();
+
+    // Append all fields to formData
+    Object.keys(fields).forEach((key) => {
+      if (Array.isArray(fields[key])) {
+        fields[key].forEach((item) => formData.append(key, item));
+      } else {
+        formData.append(key, fields[key]);
+      }
+    });
+
     try {
       const response = await fetch("/api/cars", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...fields,
-          userMongoId: user.publicMetadata.userMongoId,
-        }),
+        body: formData,
       });
+
+      const data = await response.json();
       if (!response.ok) {
-        setPublishError("Failed to add car.");
+        setPublishError(data.error || "Failed to add car");
         return;
       }
-      if (response.ok) {
-        router.push("/dashboard/add");
-      }
+
+      router.push(`/cars/${data._id}`);
     } catch (error) {
-      setPublishError(error.message);
+      setPublishError("Network error - please check your connection");
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <h2 className="text-3xl text-center font-semibold mb-6">Add Car</h2>
+    <form onSubmit={handleSubmit} encType="multipart/form-data">
+      <h2 className="mb-6 text-3xl font-semibold text-center">Add Car</h2>
 
       <div className="mb-4">
         <label
           htmlFor="car_type"
-          className="block text-gray-700 font-bold mb-2"
+          className="block mb-2 font-bold text-gray-700"
         >
           Car Type
         </label>
         <select
           id="class"
           name="class"
-          className="border rounded w-full py-2 px-3"
+          className="w-full px-3 py-2 border rounded"
           required
           value={fields.class}
           onChange={handleChange}
@@ -115,26 +135,22 @@ export default function CarAddForm() {
         </select>
       </div>
       <div className="mb-4">
-        <label className="block text-gray-700 font-bold mb-2">Car make</label>
+        <label className="block mb-2 font-bold text-gray-700">Car Make</label>
         <input
           type="text"
-          id="make"
           name="make"
-          className="border rounded w-full py-2 px-3 mb-2"
-          placeholder="e.g. Toyota"
+          className="w-full px-3 py-2 border rounded"
           required
           value={fields.make}
           onChange={handleChange}
         />
       </div>
       <div className="mb-4">
-        <label className="block text-gray-700 font-bold mb-2">Car model</label>
+        <label className="block mb-2 font-bold text-gray-700">Car Model</label>
         <input
           type="text"
-          id="model"
           name="model"
-          className="border rounded w-full py-2 px-3 mb-2"
-          placeholder="e.g. RAV4"
+          className="w-full px-3 py-2 border rounded"
           required
           value={fields.model}
           onChange={handleChange}
@@ -142,36 +158,31 @@ export default function CarAddForm() {
       </div>
 
       <div className="mb-4">
-        <label
-          htmlFor="description"
-          className="block text-gray-700 font-bold mb-2"
-        >
+        <label className="block mb-2 font-bold text-gray-700">
           Description
         </label>
         <textarea
-          id="description"
           name="description"
-          className="border rounded w-full py-2 px-3"
+          className="w-full px-3 py-2 border rounded"
           rows="4"
-          placeholder="Enter car description"
           required
           value={fields.description}
           onChange={handleChange}
         ></textarea>
       </div>
 
-      <div className="mb-4 flex flex-wrap">
-        <div className="w-full sm:w-1/3 pr-2">
+      <div className="flex flex-wrap mb-4">
+        <div className="w-full pr-2 sm:w-1/3">
           <label
             htmlFor="transmission"
-            className="block text-gray-700 font-bold mb-2"
+            className="block mb-2 font-bold text-gray-700"
           >
             Transmission
           </label>
           <select
             id="transmission"
             name="transmission"
-            className="border rounded w-full py-2 px-3"
+            className="w-full px-3 py-2 border rounded"
             required
             value={fields.transmission}
             onChange={handleChange}
@@ -181,14 +192,15 @@ export default function CarAddForm() {
             <option value="m">m</option>
           </select>
         </div>
-        <div className="w-full sm:w-1/3 px-2">
-          <label htmlFor="drive" className="block text-gray-700 font-bold mb-2">
+
+        <div className="w-full px-2 sm:w-1/3">
+          <label htmlFor="drive" className="block mb-2 font-bold text-gray-700">
             Drive
           </label>
           <select
             id="drive"
             name="drive"
-            className="border rounded w-full py-2 px-3"
+            className="w-full px-3 py-2 border rounded"
             required
             value={fields.drive}
             onChange={handleChange}
@@ -200,45 +212,45 @@ export default function CarAddForm() {
             <option value="4WD"> 4WD</option>
           </select>
         </div>
-        <div className="w-full sm:w-1/3 pl-2">
-          <label htmlFor="kph" className="block text-gray-700 font-bold mb-2">
+        <div className="w-full pl-2 sm:w-1/3">
+          <label htmlFor="kph" className="block mb-2 font-bold text-gray-700">
             KPH
           </label>
           <input
             type="number"
             id="kph"
             name="kph"
-            className="border rounded w-full py-2 px-3"
+            className="w-full px-3 py-2 border rounded"
             required
             value={fields.kph}
             onChange={handleChange}
           />
         </div>
-        <div className="w-full sm:w-1/3 pl-2">
-          <label htmlFor="year" className="block text-gray-700 font-bold mb-2">
+        <div className="w-full pl-2 sm:w-1/3">
+          <label htmlFor="year" className="block mb-2 font-bold text-gray-700">
             Year
           </label>
           <input
             type="number"
             id="year"
             name="year"
-            className="border rounded w-full py-2 px-3"
+            className="w-full px-3 py-2 border rounded"
             required
             value={fields.year}
             onChange={handleChange}
           />
         </div>
-        <div className="w-full sm:w-1/3 pl-2">
+        <div className="w-full pl-2 sm:w-1/3">
           <label
             htmlFor="fuel_type"
-            className="block text-gray-700 font-bold mb-2"
+            className="block mb-2 font-bold text-gray-700"
           >
             Fuel Type
           </label>
           <select
             id="fuel_type"
             name="fuel_type"
-            className="border rounded w-full py-2 px-3"
+            className="w-full px-3 py-2 border rounded"
             required
             value={fields.fuel_type}
             onChange={handleChange}
@@ -251,15 +263,14 @@ export default function CarAddForm() {
             <option value="Other">Other</option>
           </select>
         </div>
-        <div className="w-full sm:w-1/3 pl-2">
-          <label htmlFor="price" className="block text-gray-700 font-bold mb-2">
+        <div className="mb-4">
+          <label className="block mb-2 font-bold text-gray-700">
             Car Price
           </label>
           <input
             type="number"
-            id="price"
             name="price"
-            className="border rounded w-full py-2 px-3"
+            className="w-full px-3 py-2 border rounded"
             required
             value={fields.price}
             onChange={handleChange}
@@ -268,13 +279,13 @@ export default function CarAddForm() {
       </div>
 
       <div className="mb-4">
-        <label className="block text-gray-700 font-bold mb-2">Features</label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <label className="block mb-2 font-bold text-gray-700">Features</label>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           <div>
             <input
               type="checkbox"
               id="feature_CD Player"
-              name="feature"
+              name="features"
               value="CD Player"
               className="mr-2"
               checked={fields.features.includes("CD Player")}
@@ -286,7 +297,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Bluetooth"
-              name="feature"
+              name="features"
               value="Bluetooth"
               className="mr-2"
               checked={fields.features.includes("Bluetooth")}
@@ -298,7 +309,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Navigation"
-              name="feature"
+              name="features"
               value="Navigation"
               className="mr-2"
               checked={fields.features.includes("Navigation")}
@@ -310,7 +321,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Sunroof"
-              name="feature"
+              name="features"
               value="Sunroof"
               className="mr-2"
               checked={fields.features.includes("Sunroof")}
@@ -322,7 +333,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Leather_Seats"
-              name="feature"
+              name="features"
               value="Leather Seats"
               className="mr-2"
               checked={fields.features.includes("Leather Seats")}
@@ -334,7 +345,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Backup_Camera"
-              name="feature"
+              name="features"
               value="Backup Camera"
               className="mr-2"
               checked={fields.features.includes("Backup Camera")}
@@ -346,7 +357,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Cruise_Control"
-              name="feature"
+              name="features"
               value="Cruise Control"
               className="mr-2"
               checked={fields.features.includes("Cruise Control")}
@@ -358,7 +369,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Heated_Seats"
-              name="feature"
+              name="features"
               value="Heated Seats"
               className="mr-2"
               checked={fields.features.includes("Heated Seats")}
@@ -370,7 +381,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Satellite_Radio"
-              name="feature"
+              name="features"
               value="Satellite Radio"
               className="mr-2"
               checked={fields.features.includes("Satellite Radio")}
@@ -382,7 +393,7 @@ export default function CarAddForm() {
             <input
               type="checkbox"
               id="feature_Parking_Sensors"
-              name="feature"
+              name="features"
               value="Parking Sensors"
               className="mr-2"
               checked={fields.features.includes("Parking Sensors")}
@@ -392,69 +403,15 @@ export default function CarAddForm() {
           </div>
         </div>
       </div>
-      <div className="mb-4">
-        <label
-          htmlFor="seller_name"
-          className="block text-gray-700 font-bold mb-2"
-        >
-          Seller Name
-        </label>
-        <input
-          type="text"
-          id="seller_name"
-          name="seller_info.name"
-          className="border rounded w-full py-2 px-3"
-          placeholder="Name"
-          value={fields.seller_info.name}
-          onChange={handleChange}
-        />
-      </div>
-      <div className="mb-4">
-        <label
-          htmlFor="seller_email"
-          className="block text-gray-700 font-bold mb-2"
-        >
-          Seller Email
-        </label>
-        <input
-          type="email"
-          id="seller_email"
-          name="seller_info.email"
-          className="border rounded w-full py-2 px-3"
-          placeholder="Email address"
-          required
-          value={fields.seller_info.email}
-          onChange={handleChange}
-        />
-      </div>
 
       <div className="mb-4">
-        <label
-          htmlFor="seller_phone"
-          className="block text-gray-700 font-bold mb-2"
-        >
-          Seller Phone
-        </label>
-        <input
-          type="tel"
-          id="seller_phone"
-          name="seller_info.phone"
-          className="border rounded w-full py-2 px-3"
-          placeholder="Phone"
-          value={fields.seller_info.phone}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="mb-4">
-        <label htmlFor="images" className="block text-gray-700 font-bold mb-2">
-          Images (Select up to 4 images)
+        <label className="block mb-2 font-bold text-gray-700">
+          Images (Max 4)
         </label>
         <input
           type="file"
-          id="images"
           name="images"
-          className="border rounded w-full py-2 px-3"
+          className="w-full px-3 py-2 border rounded"
           accept="image/*"
           multiple
           onChange={handleImageChange}
@@ -462,15 +419,16 @@ export default function CarAddForm() {
         />
       </div>
       {publishError && (
-        <p className="text-red-500 font-semibold mt-4">{publishError}</p>
+        <p className="mt-4 font-semibold text-red-500">{publishError}</p>
       )}
 
       <div>
         <button
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline"
+          className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none focus:shadow-outline disabled:bg-blue-300"
           type="submit"
+          disabled={isSubmitting}
         >
-          Add Car
+          {isSubmitting ? "Adding Car..." : "Add Car"}
         </button>
       </div>
     </form>
