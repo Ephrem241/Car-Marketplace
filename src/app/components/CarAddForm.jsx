@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@clerk/nextjs";
+
+import { app } from "@/firebase.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function CarAddForm() {
-  const { session } = useSession();
   const [publishError, setPublishError] = useState(null);
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [fields, setFields] = useState({
@@ -25,28 +25,18 @@ export default function CarAddForm() {
     description: "This is a sample car description.",
   });
 
-  useEffect(() => {
-    if (!session) {
-      router.push("/login");
-      return;
-    }
-
-    const user = session.user;
-    if (user?.publicMetadata?.isAdmin) {
-      setIsAdmin(true);
-    } else {
-      router.push("/"); // Redirect non-admins
-    }
-    setLoading(false);
-  }, [session, router]);
-
-  if (loading) return <p>Loading...</p>;
-
-  if (!isAdmin) return <p>Unauthorized</p>;
-
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFields((prevFields) => ({ ...prevFields, [name]: value }));
+    const { name, value, type, checked } = e.target;
+
+    // Parse number inputs
+    const newValue =
+      type === "number"
+        ? parseFloat(value)
+        : type === "checkbox"
+        ? checked
+        : value;
+
+    setFields((prevFields) => ({ ...prevFields, [name]: newValue }));
   };
 
   const handleFeaturesChange = (e) => {
@@ -59,16 +49,46 @@ export default function CarAddForm() {
     }));
   };
 
-  const handleImageChange = (e) => {
-    const { files } = e.target;
-    if (files.length > 4) {
-      setPublishError("You can only upload up to 4 images.");
+  const handleUploadImages = async (e) => {
+    setPublishError(null);
+    const files = Array.from(e.target.files);
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (fields.images.length + files.length > 4) {
+      setPublishError("Maximum 4 images allowed");
       return;
     }
-    setFields((prevFields) => ({
-      ...prevFields,
-      images: Array.from(files),
-    }));
+
+    const storage = getStorage(app);
+    const imageUrls = [];
+
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        setPublishError("Only image files are allowed");
+        return;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        setPublishError(`File ${file.name} is too large. Maximum size is 5MB`);
+        continue;
+      }
+
+      try {
+        const storageRef = ref(storage, `cars/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        imageUrls.push(downloadURL);
+      } catch (error) {
+        console.error("Image Upload Error:", error);
+        setPublishError("Failed to upload one or more images");
+      }
+    }
+
+    if (imageUrls.length > 0) {
+      setFields((prevFields) => ({
+        ...prevFields,
+        images: [...prevFields.images, ...imageUrls],
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -76,14 +96,35 @@ export default function CarAddForm() {
     setIsSubmitting(true);
     setPublishError(null);
 
+    const setErrorAndReset = (message) => {
+      setPublishError(message);
+      setIsSubmitting(false);
+    };
+
+    if (fields.images.length === 0) {
+      setErrorAndReset("At least 1 image required");
+      return;
+    }
+
+    if (fields.price <= 0) {
+      setErrorAndReset("Price must be greater than 0");
+      return;
+    }
+
+    const currentYear = new Date().getFullYear();
+    if (fields.year < 1900 || fields.year > currentYear + 1) {
+      setErrorAndReset(`Year must be between 1900 and ${currentYear + 1}`);
+      return;
+    }
+
     const formData = new FormData();
 
-    // Append all fields to formData
     Object.keys(fields).forEach((key) => {
-      if (Array.isArray(fields[key])) {
-        fields[key].forEach((item) => formData.append(key, item));
+      const value = fields[key];
+      if (Array.isArray(value)) {
+        value.forEach((item) => formData.append(key, item));
       } else {
-        formData.append(key, fields[key]);
+        formData.append(key, value);
       }
     });
 
@@ -95,13 +136,13 @@ export default function CarAddForm() {
 
       const data = await response.json();
       if (!response.ok) {
-        setPublishError(data.error || "Failed to add car");
+        setErrorAndReset(data.error || "Failed to add car");
         return;
       }
 
       router.push(`/cars/${data._id}`);
     } catch (error) {
-      setPublishError("Network error - please check your connection");
+      setErrorAndReset("Network error - please check your connection");
     } finally {
       setIsSubmitting(false);
     }
@@ -414,8 +455,8 @@ export default function CarAddForm() {
           className="w-full px-3 py-2 border rounded"
           accept="image/*"
           multiple
-          onChange={handleImageChange}
           required
+          onChange={handleUploadImages}
         />
       </div>
       {publishError && (
