@@ -24,113 +24,68 @@ export const POST = async (request) => {
     await connect();
     const user = await getSessionUser(request);
 
-    if (!user || !user.publicMetadata?.isAdmin) {
+    if (!user?.publicMetadata?.isAdmin) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
+    }
+
+    // Check content type
+    const contentType = request.headers.get("content-type");
+    if (!contentType || !contentType.includes("multipart/form-data")) {
       return new Response(
-        JSON.stringify({
-          error: "Unauthorized - Only administrators can add cars",
-        }),
-        { status: 401 }
+        JSON.stringify({ error: "Content type must be multipart/form-data" }),
+        { status: 400 }
       );
     }
 
     const formData = await request.formData();
 
-    if (
-      !formData.get("make") ||
-      !formData.get("model") ||
-      !formData.get("description")
-    ) {
-      const missingFields = [];
-      if (!formData.get("make")) missingFields.push("make");
-      if (!formData.get("model")) missingFields.push("model");
-      if (!formData.get("description")) missingFields.push("description");
+    // Get all features and images as arrays
+    const features = formData.getAll("features");
+    const images = formData.getAll("images");
 
-      return new Response(
-        JSON.stringify({
-          error: `Missing required fields: ${missingFields.join(", ")}`,
-        }),
-        { status: 400 }
-      );
+    // Validate required fields
+    const requiredFields = ["make", "model", "year", "price"];
+    for (const field of requiredFields) {
+      if (!formData.get(field)) {
+        return new Response(JSON.stringify({ error: `${field} is required` }), {
+          status: 400,
+        });
+      }
     }
 
-    const year = Number(formData.get("year"));
-    const price = Number(formData.get("price"));
-    const kph = Number(formData.get("kph"));
-
-    if (isNaN(year) || isNaN(price) || isNaN(kph)) {
-      return new Response(
-        JSON.stringify({
-          error: "Year, price, and kph must be valid numbers",
-        }),
-        { status: 400 }
-      );
-    }
-
-    const currentYear = new Date().getFullYear();
-    if (year < 1900 || year > currentYear + 1) {
-      return new Response(
-        JSON.stringify({
-          error: `Year must be between 1900 and ${currentYear + 1}`,
-        }),
-        { status: 400 }
-      );
-    }
-
-    if (price <= 0) {
-      return new Response(
-        JSON.stringify({
-          error: "Price must be greater than 0",
-        }),
-        { status: 400 }
-      );
-    }
-
-    const features = formData.getAll("features") || [];
-    const images = formData.getAll("images").map((url) => url.toString());
-
-    if (images.length < 1) {
-      return new Response(
-        JSON.stringify({
-          error: "You must provide at least 1 image",
-        }),
-        { status: 400 }
-      );
-    }
-
+    // Create car data object
     const carData = {
       make: formData.get("make"),
       model: formData.get("model"),
-      year,
-      price,
+      year: Number(formData.get("year")),
+      price: Number(formData.get("price")),
       description: formData.get("description"),
-      class: formData.get("class"),
+      carClass: formData.get("carClass"),
       drive: formData.get("drive"),
       fuel_type: formData.get("fuel_type"),
       transmission: formData.get("transmission"),
-      kph,
-      features,
-      images,
-      userId: user.publicMetadata.userMongoId,
-      createdAt: new Date(),
+      kph: Number(formData.get("kph")),
+      features: features,
+      images: images,
+      createdBy: user.publicMetadata.userMongoId,
     };
 
     const newCar = new Car(carData);
-
     await newCar.save();
+
     return new Response(
-      JSON.stringify({
-        message: "Car Added Successfully",
-        _id: newCar._id,
-      }),
+      JSON.stringify({ message: "Car Added Successfully", _id: newCar._id }),
       {
-        status: 200,
+        status: 201,
       }
     );
   } catch (error) {
-    console.error("Server Error:", error);
+    console.error("Error adding car:", error);
     return new Response(
       JSON.stringify({
-        error: "Internal server error",
+        error: error.message || "Failed to add car",
       }),
       { status: 500 }
     );

@@ -1,25 +1,65 @@
 import { Schema, model, models } from "mongoose";
+
 const CarSchema = new Schema(
   {
-    userId: {
+    createdBy: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: "User",
     },
-    kph: { type: Number, required: true },
-    class: { type: String, required: true },
-    description: { type: String, required: true },
-    drive: { type: String, required: true },
-    fuel_type: { type: String, required: true },
-    make: { type: String, required: true },
-    model: { type: String, required: true },
-    transmission: { type: String, required: true },
-    year: { type: Number, required: true },
-    price: { type: Number, required: true },
-    isFeatured: { type: Boolean, default: false },
-    features: { type: [String], required: true },
-    images: { type: [String], required: true },
+    kph: {
+      type: Number,
+      required: true,
+    },
+    carClass: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    drive: {
+      type: String,
+      required: true,
+    },
+    fuel_type: {
+      type: String,
+      required: true,
+    },
+    make: {
+      type: String,
+      required: true,
+    },
+    model: {
+      type: String,
+      required: true,
+    },
+    transmission: {
+      type: String,
+      required: true,
+    },
+    year: {
+      type: Number,
+    },
+    price: {
+      type: Number,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    features: [
+      {
+        type: String,
+      },
+    ],
+    images: [
+      {
+        type: String,
+      },
+    ],
   },
-
   {
     timestamps: true,
   }

@@ -6,17 +6,17 @@ import Link from "next/link";
 
 export default function CarCard({ car }) {
   return (
-    <div className="rounded-xl shadow-md relative">
+    <div className="relative shadow-md rounded-xl">
       <Image
         src={`/images/cars/${car.images[0]}`}
-        alt=""
+        alt="car"
         className="w-full h-auto rounded-t-xl"
-        width={0}
-        height={0}
+        width={500}
+        height={300}
         sizes="100vw"
       />
       <div className="p-4">
-        <div className="text-left md:text-center lg:text-left mb-6">
+        <div className="mb-6 text-left md:text-center lg:text-left">
           <div className="text-gray-600">{car.make}</div>
           <h3 className="text-xl font-bold">{car.model}</h3>
         </div>
@@ -24,7 +24,7 @@ export default function CarCard({ car }) {
           {car.price}
         </h3>
 
-        <div className="flex justify-center gap-4 text-gray-500 mb-4">
+        <div className="flex justify-center gap-4 mb-4 text-gray-500">
           <p>
             <Image
               src="/steering-wheel.svg"
@@ -47,7 +47,7 @@ export default function CarCard({ car }) {
           </p>
           <p>
             <Image src="/gas.svg" width={20} height={20} alt="seat" />
-            {car.kmp} <span className="md:hidden lg:inline">KMP</span>
+            {car.kph} <span className="md:hidden lg:inline">KPH</span>
           </p>
           <p>
             <span className="hidden sm:inline">{car.year} </span>

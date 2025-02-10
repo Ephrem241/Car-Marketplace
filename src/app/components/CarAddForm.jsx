@@ -1,18 +1,32 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { app } from "@/firebase";
 
-import { app } from "@/firebase.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { CircularProgressbar } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+
+import { Alert, Button, FileInput } from "flowbite-react";
+import Image from "next/image";
 
 export default function CarAddForm() {
   const [publishError, setPublishError] = useState(null);
   const router = useRouter();
-
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [imageUploadProgress, setImageUploadProgress] = useState({});
+  const [imageUploadError, setImageUploadError] = useState(null);
+  const [formData, setFormData] = useState({});
 
   const [fields, setFields] = useState({
     kph: 25,
-    class: "SUV",
+    carClass: "SUV",
     drive: "AWD",
     fuel_type: "Diesel",
     make: "Toyota",
@@ -27,15 +41,8 @@ export default function CarAddForm() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    // Parse number inputs
     const newValue =
-      type === "number"
-        ? parseFloat(value)
-        : type === "checkbox"
-        ? checked
-        : value;
-
+      type === "number" ? Number(value) || 0 : checked ? checked : value;
     setFields((prevFields) => ({ ...prevFields, [name]: newValue }));
   };
 
@@ -48,46 +55,72 @@ export default function CarAddForm() {
         : prevFields.features.filter((feature) => feature !== value),
     }));
   };
+  const handleUploadImages = async () => {
+    try {
+      setImageUploadError(null);
 
-  const handleUploadImages = async (e) => {
-    setPublishError(null);
-    const files = Array.from(e.target.files);
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    if (fields.images.length + files.length > 4) {
-      setPublishError("Maximum 4 images allowed");
-      return;
-    }
-
-    const storage = getStorage(app);
-    const imageUrls = [];
-
-    for (const file of files) {
-      if (!file.type.startsWith("image/")) {
-        setPublishError("Only image files are allowed");
+      if (!files || files.length === 0) {
+        setImageUploadError("Please select at least one image");
         return;
       }
 
-      if (file.size > MAX_FILE_SIZE) {
-        setPublishError(`File ${file.name} is too large. Maximum size is 5MB`);
-        continue;
+      // Check total images won't exceed 4
+      if (fields.images.length + files.length > 4) {
+        setImageUploadError("Maximum 4 images allowed");
+        return;
       }
 
-      try {
-        const storageRef = ref(storage, `cars/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        imageUrls.push(downloadURL);
-      } catch (error) {
-        console.error("Image Upload Error:", error);
-        setPublishError("Failed to upload one or more images");
-      }
-    }
+      const storage = getStorage(app);
+      setUploading(true);
 
-    if (imageUrls.length > 0) {
-      setFields((prevFields) => ({
-        ...prevFields,
-        images: [...prevFields.images, ...imageUrls],
+      // Create array of upload promises
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const fileName = new Date().getTime() + "-" + file.name;
+        const storageRef = ref(storage, fileName);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        // Track individual file progress
+        return new Promise((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const progress = Math.round(
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+              );
+              setImageUploadProgress((prev) => ({
+                ...prev,
+                [fileName]: progress,
+              }));
+            },
+            (error) => reject(error),
+            async () => {
+              try {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(url);
+              } catch (error) {
+                reject(error);
+              }
+            }
+          );
+        });
+      });
+
+      // Wait for all uploads to complete
+      const urls = await Promise.allSettled(uploadPromises);
+      const successfulUploads = urls
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
+
+      setFields((prev) => ({
+        ...prev,
+        images: [...prev.images, ...successfulUploads],
       }));
+    } catch (error) {
+      setImageUploadError("Image upload failed");
+    } finally {
+      setFiles([]);
+      setImageUploadProgress({});
+      setUploading(false);
     }
   };
 
@@ -96,74 +129,70 @@ export default function CarAddForm() {
     setIsSubmitting(true);
     setPublishError(null);
 
-    const setErrorAndReset = (message) => {
-      setPublishError(message);
-      setIsSubmitting(false);
-    };
-
     if (fields.images.length === 0) {
-      setErrorAndReset("At least 1 image required");
+      setPublishError("Please upload at least one image");
+      setIsSubmitting(false);
+      return;
+    } else if (fields.images.length > 4) {
+      setPublishError("Maximum 4 images allowed");
+      setIsSubmitting(false);
       return;
     }
 
-    if (fields.price <= 0) {
-      setErrorAndReset("Price must be greater than 0");
-      return;
-    }
-
-    const currentYear = new Date().getFullYear();
-    if (fields.year < 1900 || fields.year > currentYear + 1) {
-      setErrorAndReset(`Year must be between 1900 and ${currentYear + 1}`);
-      return;
-    }
-
-    const formData = new FormData();
-
-    Object.keys(fields).forEach((key) => {
-      const value = fields[key];
-      if (Array.isArray(value)) {
-        value.forEach((item) => formData.append(key, item));
-      } else {
-        formData.append(key, value);
-      }
-    });
+    if (isSubmitting) return;
 
     try {
+      const formData = new FormData();
+      // Properly append all fields including arrays
+      Object.entries(fields).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          // Clear any existing values for this key
+          value.forEach((item) => {
+            formData.append(key, item.toString());
+          });
+        } else {
+          formData.append(key, value.toString());
+        }
+      });
+
       const response = await fetch("/api/cars", {
         method: "POST",
         body: formData,
       });
 
       const data = await response.json();
+
       if (!response.ok) {
-        setErrorAndReset(data.error || "Failed to add car");
-        return;
+        throw new Error(data.error || "Failed to add car");
       }
 
       router.push(`/cars/${data._id}`);
     } catch (error) {
-      setErrorAndReset("Network error - please check your connection");
+      setPublishError(
+        error.message || "Network error - please check your connection"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
   return (
     <form onSubmit={handleSubmit} encType="multipart/form-data">
       <h2 className="mb-6 text-3xl font-semibold text-center">Add Car</h2>
 
       <div className="mb-4">
         <label
-          htmlFor="car_type"
+          htmlFor="carClass"
           className="block mb-2 font-bold text-gray-700"
         >
-          Car Type
+          Car Class
         </label>
         <select
-          id="class"
-          name="class"
+          id="carClass"
+          name="carClass"
           className="w-full px-3 py-2 border rounded"
           required
-          value={fields.class}
+          value={fields.carClass}
           onChange={handleChange}
         >
           <option value="SUV">SUV</option>
@@ -247,10 +276,10 @@ export default function CarAddForm() {
             onChange={handleChange}
           >
             <option value="">Select Drive Type</option>
-            <option value="FWD"> FWD</option>
-            <option value="RWD"> RWD</option>
-            <option value="AWD"> AWD</option>
-            <option value="4WD"> 4WD</option>
+            <option value="FWD">FWD</option>
+            <option value="RWD">RWD</option>
+            <option value="AWD">AWD</option>
+            <option value="4WD">4WD</option>
           </select>
         </div>
         <div className="w-full pl-2 sm:w-1/3">
@@ -304,7 +333,7 @@ export default function CarAddForm() {
             <option value="Other">Other</option>
           </select>
         </div>
-        <div className="mb-4">
+        <div className="w-full pl-2 sm:w-1/3">
           <label className="block mb-2 font-bold text-gray-700">
             Car Price
           </label>
@@ -313,6 +342,8 @@ export default function CarAddForm() {
             name="price"
             className="w-full px-3 py-2 border rounded"
             required
+            min="0"
+            step="0.01"
             value={fields.price}
             onChange={handleChange}
           />
@@ -445,33 +476,63 @@ export default function CarAddForm() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block mb-2 font-bold text-gray-700">
-          Images (Max 4)
-        </label>
-        <input
+      <div className="flex items-center justify-between gap-4 p-3 border-4 border-teal-500 border-dotted">
+        <FileInput
           type="file"
-          name="images"
-          className="w-full px-3 py-2 border rounded"
           accept="image/*"
           multiple
-          required
-          onChange={handleUploadImages}
+          onChange={(e) => setFiles(Array.from(e.target.files))}
+          disabled={uploading || fields.images.length >= 4}
         />
+        <Button
+          type="button"
+          gradientDuoTone="purpleToBlue"
+          size="sm"
+          outline
+          onClick={handleUploadImages}
+          disabled={uploading || files.length === 0}
+        >
+          {uploading ? "Uploading..." : "Upload Images"}
+        </Button>
+        {Object.entries(imageUploadProgress).map(([fileName, progress]) => (
+          <div key={fileName} className="flex items-center gap-2">
+            <span className="text-sm">{fileName}</span>
+            <div className="w-20">
+              <CircularProgressbar value={progress} text={`${progress}%`} />
+            </div>
+          </div>
+        ))}
+        <div className="grid grid-cols-2 gap-4">
+          {fields.images.map((img, index) => (
+            <div key={index} className="relative">
+              <Image
+                src={img}
+                alt={`Preview ${index + 1}`}
+                width={200}
+                height={150}
+                className="object-cover rounded-lg"
+              />
+            </div>
+          ))}
+        </div>
       </div>
-      {publishError && (
-        <p className="mt-4 font-semibold text-red-500">{publishError}</p>
+
+      {imageUploadError && <Alert color="failure">{imageUploadError}</Alert>}
+      {formData.image && (
+        <Image
+          src={formData.image}
+          alt="upload"
+          className="object-cover w-full h-72"
+        />
       )}
 
-      <div>
-        <button
-          className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none focus:shadow-outline disabled:bg-blue-300"
-          type="submit"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Adding Car..." : "Add Car"}
-        </button>
-      </div>
+      <Button
+        className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none focus:shadow-outline disabled:bg-blue-300"
+        type="submit"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Adding Car..." : "Add Car"}
+      </Button>
     </form>
   );
 }
