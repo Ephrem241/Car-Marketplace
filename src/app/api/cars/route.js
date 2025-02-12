@@ -30,56 +30,69 @@ export const POST = async (request) => {
       });
     }
 
-    // Check content type
+    // Accept both JSON and multipart/form-data
     const contentType = request.headers.get("content-type");
-    if (!contentType || !contentType.includes("multipart/form-data")) {
-      return new Response(
-        JSON.stringify({ error: "Content type must be multipart/form-data" }),
-        { status: 400 }
-      );
+    let carData;
+
+    if (contentType?.includes("application/json")) {
+      carData = await request.json();
+    } else if (contentType?.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      carData = {
+        make: formData.get("make"),
+        model: formData.get("model"),
+        year: Number(formData.get("year")),
+        price: Number(formData.get("price")),
+        description: formData.get("description"),
+        carClass: formData.get("carClass"),
+        drive: formData.get("drive"),
+        fuel_type: formData.get("fuel_type"),
+        transmission: formData.get("transmission"),
+        kph: Number(formData.get("kph")),
+        features: formData.getAll("features"),
+        images: formData.getAll("images"),
+      };
+    } else {
+      return new Response(JSON.stringify({ error: "Invalid content type" }), {
+        status: 400,
+      });
     }
-
-    const formData = await request.formData();
-
-    // Get all features and images as arrays
-    const features = formData.getAll("features");
-    const images = formData.getAll("images");
 
     // Validate required fields
     const requiredFields = ["make", "model", "year", "price"];
     for (const field of requiredFields) {
-      if (!formData.get(field)) {
+      if (!carData[field]) {
         return new Response(JSON.stringify({ error: `${field} is required` }), {
           status: 400,
         });
       }
     }
 
-    // Create car data object
-    const carData = {
-      make: formData.get("make"),
-      model: formData.get("model"),
-      year: Number(formData.get("year")),
-      price: Number(formData.get("price")),
-      description: formData.get("description"),
-      carClass: formData.get("carClass"),
-      drive: formData.get("drive"),
-      fuel_type: formData.get("fuel_type"),
-      transmission: formData.get("transmission"),
-      kph: Number(formData.get("kph")),
-      features: features,
-      images: images,
-      createdBy: user.publicMetadata.userMongoId,
-    };
+    // Validate number of images
+    if (!carData.images || !Array.isArray(carData.images)) {
+      return new Response(
+        JSON.stringify({ error: "Images must be an array" }),
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (carData.images.length > 4) {
+      return new Response(
+        JSON.stringify({ error: "Maximum of 4 images allowed" }),
+        { status: 400 }
+      );
+    }
+
+    carData.createdBy = user.publicMetadata.userMongoId;
 
     const newCar = new Car(carData);
     await newCar.save();
 
     return new Response(
       JSON.stringify({ message: "Car Added Successfully", _id: newCar._id }),
-      {
-        status: 201,
-      }
+      { status: 201 }
     );
   } catch (error) {
     console.error("Error adding car:", error);

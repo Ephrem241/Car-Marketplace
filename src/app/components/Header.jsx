@@ -47,6 +47,7 @@ export default function Header() {
             appearance={{
               baseTheme: theme === "light" ? light : dark,
             }}
+            userProfileUrl="/dashboard?tap=profile"
           />
         </SignedIn>
         <SignedOut>

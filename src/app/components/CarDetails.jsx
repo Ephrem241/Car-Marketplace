@@ -8,7 +8,7 @@ export default function CarDetails({ car }) {
       <div className="p-6 text-center bg-white rounded-lg shadow-md md:text-left">
         <div className="mb-4 text-gray-500">{car.make}</div>
         <h1 className="mb-4 text-3xl font-bold">{car.model}</h1>
-        <div className="flex justify-center mb-4 text-gray-500 align-middle md:justify-start">
+        <div className="flex justify-center mb-4 text-gray-500 md:justify-start">
           <p className="text-orange-700">{car.carClass}</p>
         </div>
 
@@ -23,44 +23,30 @@ export default function CarDetails({ car }) {
 
       <div className="p-6 mt-6 bg-white rounded-lg shadow-md">
         <h3 className="mb-6 text-lg font-bold">Description & Details</h3>
-        <div className="flex justify-center gap-4 mb-4 text-xl text-blue-500 space-x-9">
+        <div className="flex justify-center gap-4 mb-4 text-xl text-blue-500">
           <p>
             <Image
               src="/steering-wheel.svg"
               width={40}
               height={40}
-              layout="intrinsic"
-              alt="steering wheel"
+              alt="Steering wheel"
               className="md:hidden lg:inline"
             />{" "}
             {car.transmission === "a" ? "Automatic" : "Manual"}
           </p>
           <p>
-            <Image
-              src="/tire.svg"
-              width={40}
-              height={40}
-              layout="intrinsic"
-              alt="seat"
-            />{" "}
-            <span className="hidden sm:inline">{car.drive.toUpperCase()}</span>
+            <Image src="/tire.svg" width={40} height={40} alt="Tire" />{" "}
+            <span className="hidden sm:inline">{car.drive?.toUpperCase()}</span>
           </p>
           <p>
-            <Image
-              src="/gas.svg"
-              width={40}
-              height={40}
-              layout="intrinsic"
-              alt="seat"
-            />{" "}
-            {car.kph}
-            <span className="hidden sm:inline">KPH</span>
+            <Image src="/gas.svg" width={40} height={40} alt="Fuel gauge" />{" "}
+            {car.kph} <span className="hidden sm:inline">KPH</span>
           </p>{" "}
           <p>
-            <span className="hidden sm:inline">{car.year} </span>
+            <span className="hidden sm:inline">{car.year}</span>
           </p>
           <p>
-            <span className="hidden sm:inline">{car.fuel_type} </span>
+            <span className="hidden sm:inline">{car.fuel_type}</span>
           </p>
         </div>
         <p className="mb-4 text-center text-gray-500">{car.description}</p>
@@ -70,11 +56,16 @@ export default function CarDetails({ car }) {
         <h3 className="mb-6 text-lg font-bold">Features</h3>
 
         <ul className="grid grid-cols-1 space-y-2 list-none md:grid-cols-2 lg:grid-cols-3">
-          {car.features.map((feature, index) => (
-            <li key={index}>
-              <FaCheck className="inline-block mr-2 text-green-600" /> {feature}
-            </li>
-          ))}
+          {car.features?.length ? (
+            car.features.map((feature, index) => (
+              <li key={index}>
+                <FaCheck className="inline-block mr-2 text-green-600" />{" "}
+                {feature}
+              </li>
+            ))
+          ) : (
+            <p className="text-gray-500">No features available.</p>
+          )}
         </ul>
       </div>
     </main>
