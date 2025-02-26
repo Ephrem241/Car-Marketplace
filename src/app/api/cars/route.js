@@ -6,16 +6,38 @@ export const GET = async (request) => {
   try {
     await connect();
 
-    const cars = await Car.find({});
+    // Get pagination parameters from URL
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const skip = (page - 1) * limit;
 
-    return new Response(JSON.stringify(cars), {
-      status: 200,
-    });
+    const [cars, total] = await Promise.all([
+      Car.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Car.countDocuments({}),
+    ]);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        cars,
+        pagination: {
+          page,
+          pages: Math.ceil(total / limit),
+          total,
+        },
+      }),
+      { status: 200 }
+    );
   } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ error: "Something went wrong" }), {
-      status: 500,
-    });
+    console.error("Error fetching cars:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Failed to fetch cars",
+      }),
+      { status: 500 }
+    );
   }
 };
 

@@ -5,13 +5,17 @@ async function fetchCars() {
     if (!apiDomain) {
       return [];
     }
-    const res = await fetch(`${apiDomain}/cars`);
+    const res = await fetch(`${apiDomain}/cars`, {
+      cache: "no-store",
+    });
 
     if (!res.ok) {
       throw new Error("Failed to fetch data");
     }
 
-    return res.json();
+    const data = await res.json();
+    // Return the cars array if it exists, otherwise return an empty array
+    return data.cars || data || [];
   } catch (error) {
     console.error(error);
     return [];
@@ -26,12 +30,12 @@ async function fetchCar(id) {
     const res = await fetch(`${apiDomain}/cars/${id}`);
 
     if (!res.ok) {
-      throw new Error("Failed to fetch data");
+      throw new Error(`Failed to fetch car: ${res.statusText}`);
     }
 
     return res.json();
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching car:", error);
     return null;
   }
 }

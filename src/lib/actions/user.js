@@ -27,15 +27,18 @@ export const createOrUpdateUser = async (
     );
     return user;
   } catch (error) {
-    console.log("Error creating or updating user:", error);
+    console.error("Error creating or updating user:", error);
+    throw error;
   }
 };
 
 export const deleteUser = async (id) => {
   try {
     await connect();
-    await User.findOneAndDelete({ clerkId: id });
+    const result = await User.findOneAndDelete({ clerkId: id });
+    return result;
   } catch (error) {
-    console.log("Error deleting user:", error);
+    console.error("Error deleting user:", error);
+    throw error;
   }
 };

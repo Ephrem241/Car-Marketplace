@@ -4,69 +4,118 @@ import { FaCheck } from "react-icons/fa";
 
 export default function CarDetails({ car }) {
   return (
-    <main>
-      <div className="p-6 text-center bg-white rounded-lg shadow-md md:text-left">
-        <div className="mb-4 text-gray-500">{car.make}</div>
-        <h1 className="mb-4 text-3xl font-bold">{car.model}</h1>
-        <div className="flex justify-center mb-4 text-gray-500 md:justify-start">
-          <p className="text-orange-700">{car.carClass}</p>
+    <main className="max-w-6xl mx-auto">
+      <div className="p-8 bg-white shadow-lg rounded-xl dark:bg-gray-800">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-lg font-medium text-gray-500 dark:text-gray-400">
+              {car.make}
+            </p>
+            <h1 className="mt-2 text-4xl font-bold text-gray-900 dark:text-white">
+              {car.model}
+            </h1>
+            <div className="mt-4">
+              <span className="px-4 py-2 text-sm font-medium text-orange-700 rounded-full bg-orange-50 dark:bg-orange-900/30 dark:text-orange-400">
+                {car.carClass}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Price
+            </p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+              {car.price.toLocaleString()}
+            </p>
+          </div>
         </div>
 
-        <h3 className="p-2 my-6 text-lg font-bold text-white bg-gray-800">
-          Price
-        </h3>
-
-        <div className="flex items-center justify-center pb-4 mb-4 border-b border-gray-200 md:border-b-0 md:pb-0">
-          <div className="text-2xl font-bold text-blue-500">{car.price}</div>
-        </div>
-      </div>
-
-      <div className="p-6 mt-6 bg-white rounded-lg shadow-md">
-        <h3 className="mb-6 text-lg font-bold">Description & Details</h3>
-        <div className="flex justify-center gap-4 mb-4 text-xl text-blue-500">
-          <p>
+        <div className="grid grid-cols-5 gap-8 p-6 mt-8 bg-gray-50 rounded-xl dark:bg-gray-700/50">
+          <div className="flex flex-col items-center gap-2">
             <Image
               src="/steering-wheel.svg"
-              width={40}
-              height={40}
-              alt="Steering wheel"
-              className="md:hidden lg:inline"
-            />{" "}
-            {car.transmission === "a" ? "Automatic" : "Manual"}
-          </p>
-          <p>
-            <Image src="/tire.svg" width={40} height={40} alt="Tire" />{" "}
-            <span className="hidden sm:inline">{car.drive?.toUpperCase()}</span>
-          </p>
-          <p>
-            <Image src="/gas.svg" width={40} height={40} alt="Fuel gauge" />{" "}
-            {car.kph} <span className="hidden sm:inline">KPH</span>
-          </p>{" "}
-          <p>
-            <span className="hidden sm:inline">{car.year}</span>
-          </p>
-          <p>
-            <span className="hidden sm:inline">{car.fuel_type}</span>
+              width={32}
+              height={32}
+              alt="Transmission"
+              className="opacity-75"
+            />
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {car.transmission === "a" ? "Automatic" : "Manual"}
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <Image
+              src="/tire.svg"
+              width={32}
+              height={32}
+              alt="Drive Type"
+              className="opacity-75"
+            />
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {car.drive.toUpperCase()}
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <Image
+              src="/gas.svg"
+              width={32}
+              height={32}
+              alt="Speed"
+              className="opacity-75"
+            />
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {car.kph} KPH
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-2xl font-medium text-gray-600 dark:text-gray-300">
+              {car.year}
+            </span>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Year</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {car.fuel_type}
+            </span>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Fuel Type
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+            Description
+          </h3>
+          <p className="mt-4 leading-relaxed text-gray-600 dark:text-gray-300">
+            {car.description}
           </p>
         </div>
-        <p className="mb-4 text-center text-gray-500">{car.description}</p>
-      </div>
 
-      <div className="p-6 mt-6 bg-white rounded-lg shadow-md">
-        <h3 className="mb-6 text-lg font-bold">Features</h3>
-
-        <ul className="grid grid-cols-1 space-y-2 list-none md:grid-cols-2 lg:grid-cols-3">
-          {car.features?.length ? (
-            car.features.map((feature, index) => (
-              <li key={index}>
-                <FaCheck className="inline-block mr-2 text-green-600" />{" "}
-                {feature}
-              </li>
-            ))
-          ) : (
-            <p className="text-gray-500">No features available.</p>
-          )}
-        </ul>
+        <div className="mt-8">
+          <h3 className="mb-6 text-xl font-bold text-gray-900 dark:text-white">
+            Features
+          </h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {car.features?.length ? (
+              car.features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+                >
+                  <FaCheck className="text-green-500" />
+                  <span className="text-gray-700 dark:text-gray-200">
+                    {feature}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">
+                No features available.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );

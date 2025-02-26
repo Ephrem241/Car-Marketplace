@@ -5,6 +5,7 @@ import ThemeCom from "./components/ThemeCom";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeModeScript } from "flowbite-react";
 import Footer from "./components/Footer";
+import { ToastContainer } from "react-toastify";
 
 export const metadata = {
   title: "Create Next App",
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
               <Header />
               {children}
               <Footer />
+              <ToastContainer />
             </ThemeCom>
           </ThemeProvider>
         </body>

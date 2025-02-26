@@ -12,6 +12,11 @@ const nextConfig = {
         hostname: "res.firebasestorage.googleapis.com",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "img.clerk.com",
+        pathname: "**",
+      },
     ],
   },
 };

@@ -150,9 +150,11 @@ export default function CarAddForm() {
 
       router.push(`/cars/${data._id}`);
     } catch (error) {
-      setPublishError(
-        error.message || "Network error - please check your connection"
-      );
+      setPublishError({
+        type: "error",
+        message:
+          error.message || "Network error - please check your connection",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -162,23 +164,23 @@ export default function CarAddForm() {
     <form
       onSubmit={handleSubmit}
       encType="multipart/form-data"
-      className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md"
+      className="max-w-2xl p-6 mx-auto bg-white rounded-lg shadow-md dark:bg-gray-800"
     >
-      <h2 className="mb-6 text-3xl font-semibold text-center text-gray-800">
+      <h2 className="mb-6 text-3xl font-semibold text-center text-gray-800 dark:text-white">
         Add Car
       </h2>
 
       <div className="mb-4">
         <label
           htmlFor="carClass"
-          className="block mb-2 font-bold text-gray-700"
+          className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
         >
           Car Class
         </label>
         <select
           id="carClass"
           name="carClass"
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
           required
           value={fields.carClass}
           onChange={handleChange}
@@ -193,26 +195,26 @@ export default function CarAddForm() {
         </select>
       </div>
       <div className="mb-4">
-        <label className="block mb-2 text-gray-700 font-semibold">
+        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
           Car Make
         </label>
         <input
           type="text"
           name="make"
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
           required
           value={fields.make}
           onChange={handleChange}
         />
       </div>
       <div className="mb-4">
-        <label className="block mb-2 text-gray-700 font-semibold">
+        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
           Car Model
         </label>
         <input
           type="text"
           name="model"
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
           required
           value={fields.model}
           onChange={handleChange}
@@ -220,12 +222,12 @@ export default function CarAddForm() {
       </div>
 
       <div className="mb-4">
-        <label className="block mb-2 text-gray-700 font-semibold">
+        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
           Description
         </label>
         <textarea
           name="description"
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
           rows="4"
           required
           value={fields.description}
@@ -237,14 +239,14 @@ export default function CarAddForm() {
         <div className="w-full pr-2 sm:w-1/3">
           <label
             htmlFor="transmission"
-            className="block mb-2 text-gray-700 font-semibold"
+            className="block mb-2 font-semibold text-gray-700 dark:text-gray-200"
           >
             Transmission
           </label>
           <select
             id="transmission"
             name="transmission"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             required
             value={fields.transmission}
             onChange={handleChange}
@@ -256,13 +258,16 @@ export default function CarAddForm() {
         </div>
 
         <div className="w-full px-2 sm:w-1/3">
-          <label htmlFor="drive" className="block mb-2 font-bold text-gray-700">
+          <label
+            htmlFor="drive"
+            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
+          >
             Drive
           </label>
           <select
             id="drive"
             name="drive"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             required
             value={fields.drive}
             onChange={handleChange}
@@ -275,28 +280,34 @@ export default function CarAddForm() {
           </select>
         </div>
         <div className="w-full pl-2 sm:w-1/3">
-          <label htmlFor="kph" className="block mb-2 font-bold text-gray-700">
+          <label
+            htmlFor="kph"
+            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
+          >
             KPH
           </label>
           <input
             type="number"
             id="kph"
             name="kph"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             required
             value={fields.kph}
             onChange={handleChange}
           />
         </div>
         <div className="w-full pl-2 sm:w-1/3">
-          <label htmlFor="year" className="block mb-2 font-bold text-gray-700">
+          <label
+            htmlFor="year"
+            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
+          >
             Year
           </label>
           <input
             type="number"
             id="year"
             name="year"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             required
             value={fields.year}
             onChange={handleChange}
@@ -305,14 +316,14 @@ export default function CarAddForm() {
         <div className="w-full pl-2 sm:w-1/3">
           <label
             htmlFor="fuel_type"
-            className="block mb-2 font-bold text-gray-700"
+            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
           >
             Fuel Type
           </label>
           <select
             id="fuel_type"
             name="fuel_type"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             required
             value={fields.fuel_type}
             onChange={handleChange}
@@ -326,13 +337,13 @@ export default function CarAddForm() {
           </select>
         </div>
         <div className="w-full pl-2 sm:w-1/3">
-          <label className="block mb-2 font-bold text-gray-700">
+          <label className="block mb-2 font-bold text-gray-700 dark:text-gray-200">
             Car Price
           </label>
           <input
             type="number"
             name="price"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             required
             min="0"
             step="0.01"
@@ -343,7 +354,7 @@ export default function CarAddForm() {
       </div>
 
       <div className="mb-4">
-        <label className="block mb-2 text-gray-700 font-semibold">
+        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
           Features
         </label>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -353,11 +364,13 @@ export default function CarAddForm() {
               id="feature_CD Player"
               name="features"
               value="CD Player"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("CD Player")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_CD Player">CD Player</label>
+            <label htmlFor="feature_CD Player" className="dark:text-gray-200">
+              CD Player
+            </label>
           </div>
           <div>
             <input
@@ -365,11 +378,13 @@ export default function CarAddForm() {
               id="feature_Bluetooth"
               name="features"
               value="Bluetooth"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Bluetooth")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Bluetooth">Bluetooth</label>
+            <label htmlFor="feature_Bluetooth" className="dark:text-gray-200">
+              Bluetooth
+            </label>
           </div>
           <div>
             <input
@@ -377,11 +392,13 @@ export default function CarAddForm() {
               id="feature_Navigation"
               name="features"
               value="Navigation"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Navigation")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Navigation">Navigation</label>
+            <label htmlFor="feature_Navigation" className="dark:text-gray-200">
+              Navigation
+            </label>
           </div>
           <div>
             <input
@@ -389,11 +406,13 @@ export default function CarAddForm() {
               id="feature_Sunroof"
               name="features"
               value="Sunroof"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Sunroof")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Sunroof">Sunroof</label>
+            <label htmlFor="feature_Sunroof" className="dark:text-gray-200">
+              Sunroof
+            </label>
           </div>
           <div>
             <input
@@ -401,11 +420,16 @@ export default function CarAddForm() {
               id="feature_Leather_Seats"
               name="features"
               value="Leather Seats"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Leather Seats")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Leather_Seats">Leather Seats</label>
+            <label
+              htmlFor="feature_Leather_Seats"
+              className="dark:text-gray-200"
+            >
+              Leather Seats
+            </label>
           </div>
           <div>
             <input
@@ -413,11 +437,16 @@ export default function CarAddForm() {
               id="feature_Backup_Camera"
               name="features"
               value="Backup Camera"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Backup Camera")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Backup_Camera">Backup Camera</label>
+            <label
+              htmlFor="feature_Backup_Camera"
+              className="dark:text-gray-200"
+            >
+              Backup Camera
+            </label>
           </div>
           <div>
             <input
@@ -425,11 +454,16 @@ export default function CarAddForm() {
               id="feature_Cruise_Control"
               name="features"
               value="Cruise Control"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Cruise Control")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Cruise_Control">Cruise Control</label>
+            <label
+              htmlFor="feature_Cruise_Control"
+              className="dark:text-gray-200"
+            >
+              Cruise Control
+            </label>
           </div>
           <div>
             <input
@@ -437,11 +471,16 @@ export default function CarAddForm() {
               id="feature_Heated_Seats"
               name="features"
               value="Heated Seats"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Heated Seats")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Heated_Seats">Heated Seats</label>
+            <label
+              htmlFor="feature_Heated_Seats"
+              className="dark:text-gray-200"
+            >
+              Heated Seats
+            </label>
           </div>
           <div>
             <input
@@ -449,11 +488,16 @@ export default function CarAddForm() {
               id="feature_Satellite_Radio"
               name="features"
               value="Satellite Radio"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Satellite Radio")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Satellite_Radio">Satellite Radio</label>
+            <label
+              htmlFor="feature_Satellite_Radio"
+              className="dark:text-gray-200"
+            >
+              Satellite Radio
+            </label>
           </div>
           <div>
             <input
@@ -461,16 +505,21 @@ export default function CarAddForm() {
               id="feature_Parking_Sensors"
               name="features"
               value="Parking Sensors"
-              className="mr-2"
+              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
               checked={fields.features.includes("Parking Sensors")}
               onChange={handleFeaturesChange}
             />
-            <label htmlFor="feature_Parking_Sensors">Parking Sensors</label>
+            <label
+              htmlFor="feature_Parking_Sensors"
+              className="dark:text-gray-200"
+            >
+              Parking Sensors
+            </label>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 p-4 border-2 border-gray-300 border-dashed rounded-lg">
+      <div className="flex flex-col gap-4 p-4 border-2 border-gray-300 border-dashed rounded-lg dark:border-gray-600">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-4">
             <FileInput
@@ -479,7 +528,7 @@ export default function CarAddForm() {
               multiple
               onChange={(e) => setFiles(Array.from(e.target.files))}
               disabled={uploading || fields.images.length >= 4}
-              className="cursor-pointer"
+              className="cursor-pointer dark:text-gray-200"
               helperText={`${fields.images.length}/4 images uploaded`}
             />
             <Button
@@ -494,7 +543,7 @@ export default function CarAddForm() {
             </Button>
           </div>
           {fields.images.length >= 4 && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-red-500 dark:text-red-400">
               Maximum number of images (4) reached
             </p>
           )}
@@ -504,7 +553,9 @@ export default function CarAddForm() {
           <div className="flex flex-wrap gap-3">
             {Object.entries(imageUploadProgress).map(([fileName, progress]) => (
               <div key={fileName} className="flex flex-col items-center gap-2">
-                <span className="text-sm text-gray-700">{fileName}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {fileName}
+                </span>
                 <div className="w-16 h-16">
                   <CircularProgressbar value={progress} text={`${progress}%`} />
                 </div>
@@ -514,7 +565,7 @@ export default function CarAddForm() {
         )}
 
         {fields.images.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {fields.images.map((img, index) => (
               <div key={index} className="relative w-40 h-32">
                 <Image
@@ -529,7 +580,7 @@ export default function CarAddForm() {
         )}
       </div>
 
-      {publishError && <Alert color="failure">{publishError}</Alert>}
+      {publishError && <Alert color="failure">{publishError.message}</Alert>}
 
       <Button type="submit" className="w-full mt-6" disabled={isSubmitting}>
         {isSubmitting ? "Adding Car..." : "Add Car"}

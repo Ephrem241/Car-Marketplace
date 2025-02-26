@@ -6,58 +6,76 @@ import Link from "next/link";
 
 export default function CarCard({ car }) {
   return (
-    <div className="relative shadow-lg rounded-xl overflow-hidden bg-white transition-all duration-300 hover:shadow-xl">
-      <div className="relative w-full h-48">
+    <div className="relative flex flex-col h-full overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-xl hover:shadow-xl hover:scale-[1.01] dark:bg-gray-800 dark:border-gray-700">
+      {/* Image Container */}
+      <div className="relative w-full aspect-[16/10] overflow-hidden">
         <Image
           src={car.images[0]}
           alt={`${car.make} ${car.model}`}
-          layout="fill"
-          objectFit="cover"
-          className="rounded-t-xl"
+          fill
+          className="object-cover transition-transform duration-500 hover:scale-110"
         />
       </div>
-      <div className="p-4">
-        <div className="flex justify-between items-start">
+
+      {/* Content Container */}
+      <div className="flex flex-col flex-1 p-6">
+        {/* Header Section */}
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-gray-500 text-sm">{car.make}</div>
-            <h3 className="text-lg font-bold">{car.model}</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              {car.model}
+            </h3>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {car.make}
+            </p>
           </div>
-          <div className="bg-white shadow-md px-3 py-1 rounded-lg text-blue-500 font-bold text-sm">
-            ${car.price}
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center text-gray-500 text-xs mt-4">
-          <div className="flex items-center gap-1">
-            <Image
-              src="/steering-wheel.svg"
-              width={16}
-              height={16}
-              alt="Transmission"
-            />
-            <span>{car.transmission === "a" ? "Automatic" : "Manual"} </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Image src="/tire.svg" width={16} height={16} alt="Drive Type" />
-            <span>{car.drive.toUpperCase()}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Image src="/gas.svg" width={16} height={16} alt="Speed" />
-            <span>{car.kph} KPH</span>
+          <div className="px-4 py-2 text-lg font-bold text-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
+            ${car.price.toLocaleString()}
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-gray-600 text-xs mt-3">
-          <span>{car.year}</span>
-          <span>{car.fuel_type}</span>
+        {/* Specs Grid */}
+        <div className="grid grid-cols-3 gap-4 py-4 mt-6 border-t border-gray-100 dark:border-gray-700">
+          {[
+            {
+              icon: "/steering-wheel.svg",
+              text: car.transmission === "a" ? "Automatic" : "Manual",
+            },
+            { icon: "/tire.svg", text: car.drive.toUpperCase() },
+            { icon: "/gas.svg", text: `${car.kph} KPH` },
+          ].map((item, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <Image
+                src={item.icon}
+                width={20}
+                height={20}
+                alt=""
+                className="opacity-75"
+              />
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                {item.text}
+              </span>
+            </div>
+          ))}
         </div>
 
-        <Link
-          href={`/cars/${car._id}`}
-          className="block mt-4 bg-blue-500 hover:bg-blue-600 text-white text-center py-2 rounded-lg text-sm transition-all duration-200"
-        >
-          View Details
-        </Link>
+        {/* Footer Section */}
+        <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100 dark:border-gray-700">
+          <div className="flex gap-4">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {car.year}
+            </span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {car.fuel_type}
+            </span>
+          </div>
+          <Link
+            href={`/cars/${car._id}`}
+            className="px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          >
+            View Details
+          </Link>
+        </div>
       </div>
     </div>
   );
