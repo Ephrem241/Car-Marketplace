@@ -22,10 +22,12 @@ const CarSchema = new Schema(
     drive: {
       type: String,
       required: true,
+      enum: ["FWD", "RWD", "AWD", "4WD"],
     },
     fuel_type: {
       type: String,
       required: true,
+      enum: ["Petrol", "Diesel", "Electric", "Hybrid", "Other"],
     },
     make: {
       type: String,

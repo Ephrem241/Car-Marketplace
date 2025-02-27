@@ -1,45 +1,43 @@
 import connect from "../../../lib/mongodb/mongoose.js";
 import Car from "../../../lib/models/car.model.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
+import { NextResponse } from "next/server";
 
-export const GET = async (request) => {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q");
+    const fuel = searchParams.get("fuel");
+    const transmission = searchParams.get("transmission");
+
     await connect();
 
-    // Get pagination parameters from URL
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page")) || 1;
-    const limit = parseInt(searchParams.get("limit")) || 10;
-    const skip = (page - 1) * limit;
+    const query = {};
 
-    const [cars, total] = await Promise.all([
-      Car.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Car.countDocuments({}),
-    ]);
+    if (q) {
+      query.$or = [
+        { make: { $regex: q, $options: "i" } },
+        { model: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+      ];
+    }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        cars,
-        pagination: {
-          page,
-          pages: Math.ceil(total / limit),
-          total,
-        },
-      }),
-      { status: 200 }
-    );
+    if (fuel) {
+      query.fuel_type = fuel;
+    }
+
+    if (transmission) {
+      query.transmission = transmission;
+    }
+
+    const cars = await Car.find(query).sort({ createdAt: -1 }).limit(50);
+
+    return NextResponse.json(cars);
   } catch (error) {
     console.error("Error fetching cars:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Failed to fetch cars",
-      }),
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Error fetching cars" }, { status: 500 });
   }
-};
+}
 
 export const POST = async (request) => {
   try {
@@ -52,7 +50,6 @@ export const POST = async (request) => {
       });
     }
 
-    // Accept both JSON and multipart/form-data
     const contentType = request.headers.get("content-type");
     let carData;
 
@@ -80,7 +77,6 @@ export const POST = async (request) => {
       });
     }
 
-    // Validate required fields
     const requiredFields = ["make", "model", "year", "price"];
     for (const field of requiredFields) {
       if (!carData[field]) {
@@ -90,7 +86,6 @@ export const POST = async (request) => {
       }
     }
 
-    // Validate number of images
     if (!carData.images || !Array.isArray(carData.images)) {
       return new Response(
         JSON.stringify({ error: "Images must be an array" }),
