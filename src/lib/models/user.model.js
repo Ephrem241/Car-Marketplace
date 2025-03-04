@@ -12,6 +12,10 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       unique: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        "Please fill a valid email address",
+      ],
     },
 
     firstName: {
@@ -26,6 +30,10 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       unique: true,
+      match: [
+        /^[a-zA-Z0-9_-]+$/,
+        "Username can only contain letters, numbers, underscores and hyphens",
+      ],
       minlength: [3, "Username must be at least 3 characters long"],
       maxlength: [30, "Username cannot exceed 30 characters"],
     },

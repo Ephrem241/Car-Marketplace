@@ -44,7 +44,11 @@ export default function DashUsers() {
     if (user?.publicMetadata?.isAdmin) {
       fetchUsers();
     }
-  }, [user?.publicMetadata?.isAdmin, pagination.page]);
+  }, [
+    user?.publicMetadata?.isAdmin,
+    pagination.page,
+    user?.publicMetadata?.userMongoId,
+  ]);
 
   if (!user?.publicMetadata?.isAdmin && isLoaded) {
     return (

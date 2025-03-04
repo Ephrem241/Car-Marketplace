@@ -9,14 +9,14 @@ export default async function CarsPage() {
 
   return (
     <>
-      <section className="py-12 bg-gray-50 dark:bg-gray-900">
-        <div className="flex flex-col items-start px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <section className="py-8 bg-gray-50 dark:bg-gray-900">
+        <div className="container px-4 mx-auto max-w-7xl">
           <CarSearch />
         </div>
       </section>
 
       <section className="py-12 bg-gray-50 dark:bg-gray-900">
-        <div className="container px-4 mx-auto">
+        <div className="container px-4 mx-auto max-w-7xl">
           <h1 className="mb-8 text-3xl font-bold text-center text-gray-900 dark:text-white">
             Available Cars
           </h1>
@@ -25,7 +25,7 @@ export default async function CarsPage() {
               No cars found.
             </p>
           ) : (
-            <div className="grid items-stretch grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid items-stretch grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
               {cars.map((car) => (
                 <CarCard key={car._id} car={car} />
               ))}

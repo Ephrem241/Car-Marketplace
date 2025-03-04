@@ -124,7 +124,7 @@ export default function DashPosts() {
                           alt={car.make}
                           width={100}
                           height={100}
-                          className="object-cover w-20 h-10 bg-gray-500"
+                          className="object-cover w-20 h-10 bg-gray-500 dark:bg-gray-700"
                           onError={(e) => {
                             e.target.src = "/default-car.jpg";
                           }}

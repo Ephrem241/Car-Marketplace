@@ -46,9 +46,9 @@ export default function CarSearch() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4 md:flex-row">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end">
           <div className="flex-1">
             <TextInput
               type="text"
@@ -61,11 +61,12 @@ export default function CarSearch() {
             />
           </div>
 
-          <div className="w-full md:w-48">
+          <div className="w-full md:w-44">
             <Select
               value={fuelType}
               onChange={(e) => setFuelType(e.target.value)}
               aria-label="Select fuel type"
+              className="w-full"
             >
               <option value="">Any Fuel Type</option>
               <option value="Petrol">Petrol</option>
@@ -76,11 +77,12 @@ export default function CarSearch() {
             </Select>
           </div>
 
-          <div className="w-full md:w-48">
+          <div className="w-full md:w-44">
             <Select
               value={transmission}
               onChange={(e) => setTransmission(e.target.value)}
               aria-label="Select transmission type"
+              className="w-full"
             >
               {TRANSMISSION_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -91,11 +93,11 @@ export default function CarSearch() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button type="submit" className="flex-1">
             Search
           </Button>
-          <Button color="gray" onClick={handleReset}>
+          <Button color="gray" onClick={handleReset} className="px-6">
             Reset
           </Button>
         </div>

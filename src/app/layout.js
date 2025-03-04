@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeModeScript } from "flowbite-react";
 import Footer from "./components/Footer";
 import { ToastContainer } from "react-toastify";
+import { GlobalProvider } from "@/context/GlobalContext";
 
 export const metadata = {
   title: "Create Next App",
@@ -14,23 +15,25 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <ThemeModeScript />
-        </head>
+    <GlobalProvider>
+      <ClerkProvider>
+        <html lang="en" suppressHydrationWarning>
+          <head>
+            <ThemeModeScript />
+          </head>
 
-        <body className="relative">
-          <ThemeProvider>
-            <ThemeCom>
-              <Header />
-              {children}
-              <Footer />
-              <ToastContainer />
-            </ThemeCom>
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+          <body className="relative">
+            <ThemeProvider>
+              <ThemeCom>
+                <Header />
+                {children}
+                <Footer />
+                <ToastContainer />
+              </ThemeCom>
+            </ThemeProvider>
+          </body>
+        </html>
+      </ClerkProvider>
+    </GlobalProvider>
   );
 }
