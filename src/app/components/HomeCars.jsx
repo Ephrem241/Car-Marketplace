@@ -4,10 +4,10 @@ import Link from "next/link";
 import { fetchCars } from "@/utils/requests";
 
 export default async function HomeCars() {
-  const cars = await fetchCars();
+  const data = await fetchCars();
 
   // Better shuffle implementation
-  const recentCars = [...cars].sort(() => 0.5 - Math.random()).slice(0, 6);
+  const recentCars = data.cars.sort(() => 0.5 - Math.random()).slice(0, 3);
 
   return (
     <>

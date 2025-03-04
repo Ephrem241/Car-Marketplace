@@ -12,6 +12,11 @@ export async function GET(request) {
 
     await connect();
 
+    const page = parseInt(searchParams.get("page")) || 1;
+    const pageSize = parseInt(searchParams.get("pageSize")) || 9;
+
+    const skip = (page - 1) * pageSize;
+
     const query = {};
 
     if (q) {
@@ -30,9 +35,18 @@ export async function GET(request) {
       query.transmission = transmission;
     }
 
-    const cars = await Car.find(query).sort({ createdAt: -1 }).limit(50);
+    const total = await Car.countDocuments(query);
+    const cars = await Car.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize);
 
-    return NextResponse.json(cars);
+    const result = {
+      total,
+      cars,
+    };
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching cars:", error);
     return NextResponse.json({ error: "Error fetching cars" }, { status: 500 });
