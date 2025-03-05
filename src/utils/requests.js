@@ -1,10 +1,10 @@
 const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || "";
 
-async function fetchCars() {
+async function fetchCars({ ShowFeatured = false } = {}) {
   try {
     const baseUrl =
       typeof window !== "undefined" ? window.location.origin : apiDomain;
-    const url = new URL("/api/cars", baseUrl);
+    const url = new URL(`/api/cars${ShowFeatured ? "/featured" : ""}`, baseUrl);
 
     const res = await fetch(url.toString(), {
       cache: "no-store",
