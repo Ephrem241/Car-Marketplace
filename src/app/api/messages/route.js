@@ -12,14 +12,17 @@ export async function GET() {
   try {
     await connect();
 
+    const sessionUser = await getSessionUser();
+    if (!sessionUser || !sessionUser.isAdmin) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
     const messages = await Message.find({})
       .populate("sender", "username email firstName lastName")
       .populate("recipient", "username email firstName lastName")
       .populate("car", "title price")
       .sort({ createdAt: -1 })
       .lean();
-
-    console.log("API: Found messages:", messages.length);
 
     return NextResponse.json(messages);
   } catch (error) {
