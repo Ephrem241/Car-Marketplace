@@ -21,8 +21,8 @@ export default function CarImages({ images }) {
                   src={images[0]}
                   alt=""
                   className="object-cover h-[400px] mx-auto rounded-xl"
-                  width={1800}
-                  height={400}
+                  width={1000}
+                  height={600}
                   priority={true}
                 />
               )}
@@ -51,10 +51,10 @@ export default function CarImages({ images }) {
                         src={image}
                         alt=""
                         className="object-cover h-[400px] w-full rounded-xl"
-                        width={0}
-                        height={0}
-                        sizes="100vw"
-                        priority={true}
+                        width={1000}
+                        height={600}
+                        priority={index === 0}
+                        loading={index > 0 ? "lazy" : "eager"}
                       />
                     )}
                   </Item>

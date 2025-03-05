@@ -1,33 +1,54 @@
-const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || null;
+const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || "";
 
 async function fetchCars() {
   try {
-    if (!apiDomain) {
-      return [];
-    }
-    const res = await fetch(`${apiDomain}/cars`, {
+    const baseUrl =
+      typeof window !== "undefined" ? window.location.origin : apiDomain;
+    const url = new URL("/api/cars", baseUrl);
+
+    const res = await fetch(url.toString(), {
       cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     if (!res.ok) {
-      throw new Error("Failed to fetch data");
+      throw new Error(`Failed to fetch data: ${res.statusText}`);
     }
 
     const data = await res.json();
-    // Return the cars array if it exists, otherwise return an empty array
-    return data.cars || data || [];
+
+    if (!data || (!data.cars && !Array.isArray(data))) {
+      console.error("Invalid data format received:", data);
+      return { cars: [] };
+    }
+
+    return {
+      cars: data.cars || data || [],
+      total: data.total,
+      page: data.page,
+      pageSize: data.pageSize,
+      totalPages: data.totalPages,
+    };
   } catch (error) {
-    console.error(error);
-    return [];
+    console.error("Error fetching cars:", error);
+    return { cars: [] };
   }
 }
 
 async function fetchCar(id) {
   try {
-    if (!apiDomain) {
-      return null;
-    }
-    const res = await fetch(`${apiDomain}/cars/${id}`);
+    const baseUrl =
+      typeof window !== "undefined" ? window.location.origin : apiDomain;
+    const url = new URL(`/api/cars/${id}`, baseUrl);
+
+    const res = await fetch(url.toString(), {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!res.ok) {
       throw new Error(`Failed to fetch car: ${res.statusText}`);

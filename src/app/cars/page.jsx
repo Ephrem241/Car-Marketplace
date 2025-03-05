@@ -9,7 +9,9 @@ export default async function CarsPage() {
           <CarSearch />
         </div>
       </section>
-      <Cars />
+      <div className="container px-4 mx-auto max-w-7xl">
+        <Cars />
+      </div>
     </>
   );
 }

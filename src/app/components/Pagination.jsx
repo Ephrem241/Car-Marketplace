@@ -15,20 +15,28 @@ export default function Pagination({
     }
   };
 
+  if (totalItems === 0) return null;
+
   return (
     <section className="container mx-auto flex justify-center items-center my-8">
       <Button
-        className="mr-2 px-2 py-1 border border-gray-300 rounded"
+        color="gray"
+        className="mr-2"
         disabled={page === 1}
         onClick={() => handlePageChange(page - 1)}
       >
         Previous
       </Button>
-      <span className="mx-2">
-        Page {page} of {totalPages}
-      </span>
+
+      {totalPages > 0 && (
+        <span className="mx-2">
+          Page {page} of {totalPages}
+        </span>
+      )}
+
       <Button
-        className="ml-2 px-2 py-1 border border-gray-300 rounded"
+        color="gray"
+        className="ml-2"
         disabled={page === totalPages}
         onClick={() => handlePageChange(page + 1)}
       >

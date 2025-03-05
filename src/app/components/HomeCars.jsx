@@ -6,8 +6,10 @@ import { fetchCars } from "@/utils/requests";
 export default async function HomeCars() {
   const data = await fetchCars();
 
-  // Better shuffle implementation
-  const recentCars = data.cars.sort(() => 0.5 - Math.random()).slice(0, 3);
+  // Sort by creation date and get the 3 most recent cars
+  const recentCars = data.cars
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3);
 
   return (
     <>
