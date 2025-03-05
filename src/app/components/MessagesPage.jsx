@@ -11,6 +11,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user, isLoaded } = useUser();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -50,7 +51,7 @@ export default function MessagesPage() {
     };
 
     fetchMessages();
-  }, [user, isLoaded]);
+  }, [user, isLoaded, refreshKey]);
 
   if (!isLoaded) {
     return <Spinner loading={true} />;
@@ -92,7 +93,11 @@ export default function MessagesPage() {
           ) : (
             <div className="space-y-4">
               {messages.map((message) => (
-                <Message key={message._id} message={message} />
+                <Message
+                  key={message._id}
+                  message={message}
+                  onMessageChange={() => setRefreshKey((prev) => prev + 1)}
+                />
               ))}
             </div>
           )}

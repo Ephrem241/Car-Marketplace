@@ -5,10 +5,10 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { useGlobalContext } from "@/context/GlobalContext";
-import CarImage from "./CarImage";
+
 import { format } from "date-fns";
 
-export default function Message({ message }) {
+export default function Message({ message, onMessageChange }) {
   const [isRead, setIsRead] = useState(message.readByAdmin);
   const [isDeleting, setIsDeleting] = useState(false);
   const { setUnreadCount } = useGlobalContext();
@@ -31,6 +31,7 @@ export default function Message({ message }) {
         readByAdmin ? prevCount - 1 : prevCount + 1
       );
       toast.success(readByAdmin ? "Marked as read" : "Marked as new");
+      onMessageChange();
     } catch (error) {
       toast.error("Failed to update message status");
     }
@@ -51,6 +52,7 @@ export default function Message({ message }) {
         setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
       }
       toast.success("Message deleted successfully");
+      onMessageChange();
     } catch (error) {
       toast.error("Failed to delete message");
     }
