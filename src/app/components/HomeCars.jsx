@@ -13,9 +13,9 @@ export default async function HomeCars() {
 
   return (
     <>
-      <section className="bg-gradient-to-b from-blue-50/30 to-white py-8">
+      <section className="bg-gradient-to-b from-blue-50/30 to-white py-16 bg-blue-50">
         <div className="container-xl lg:container mx-auto px-4">
-          <div className="relative mb-12">
+          <div className="relative mb-16">
             <h2 className="text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400">
               Recent Cars
             </h2>

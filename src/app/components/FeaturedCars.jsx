@@ -18,7 +18,7 @@ export default async function FeaturedCars() {
           </div>
         </div>
       </section>
-      <section className="bg-gradient-to-b from-white to-blue-50/30 px-4 pb-16">
+      <section className="bg-gradient-to-b from-white to-blue-50/30 px-4 pb-24">
         <div className="container-xl lg:container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mt-8">
             {featuredCars.map((car) => (

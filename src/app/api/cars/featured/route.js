@@ -34,16 +34,13 @@ export async function GET(request) {
       query.transmission = transmission.trim();
     }
 
-    if (cars) {
+    if (!cars || cars.length === 0) {
       return NextResponse.json({ error: "No cars found" }, { status: 404 });
     }
 
     return NextResponse.json({
-      total,
       cars,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
+      total: cars.length,
     });
   } catch (error) {
     console.error("Error fetching cars:", error);

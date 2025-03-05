@@ -3,8 +3,14 @@ import Message from "../../../lib/models/messages.model.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
 import { NextResponse } from "next/server";
 import { Mongoose } from "mongoose";
+import { rateLimit } from "@/utils/rateLimit";
 
 export const dynamic = "force-dynamic";
+
+const limiter = rateLimit({
+  interval: 60 * 1000, // 1 minute
+  uniqueTokenPerInterval: 500,
+});
 
 // GET /api/messages
 
@@ -14,13 +20,13 @@ export async function GET() {
 
     const sessionUser = await getSessionUser();
     if (!sessionUser || !sessionUser.isAdmin) {
-      return new Response("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const messages = await Message.find({})
       .populate("sender", "username email firstName lastName")
       .populate("recipient", "username email firstName lastName")
-      .populate("car", "title price")
+      .populate("car", "make model price")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -38,27 +44,55 @@ export async function GET() {
 
 export const POST = async (request) => {
   try {
+    // Apply rate limiting
+    try {
+      await limiter.check(request, 10, "message-send"); // 10 requests per minute
+    } catch {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 }
+      );
+    }
+
     await connect();
 
     const sessionUser = await getSessionUser();
 
-    // Add debug logging
-
     if (!sessionUser) {
-      return new Response("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { name, email, phone, message, recipient, car } =
       await request.json();
 
-    if (!recipient) {
+    // Validate required fields
+    if (!name || !email || !message || !recipient || !car) {
       return NextResponse.json(
-        { error: "Recipient is required" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Make sure recipient is a valid MongoDB ObjectId
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone format if provided
+    if (phone) {
+      const phoneRegex = /^\+?[\d\s-]{10,}$/;
+      if (!phoneRegex.test(phone)) {
+        return NextResponse.json(
+          { error: "Invalid phone format" },
+          { status: 400 }
+        );
+      }
+    }
+
     if (!Mongoose.Types.ObjectId.isValid(recipient)) {
       return NextResponse.json(
         { error: "Invalid recipient ID" },
@@ -66,14 +100,18 @@ export const POST = async (request) => {
       );
     }
 
-    // Use MongoDB ID
     if (sessionUser.id.toString() === recipient) {
-      return new Response("Can not send message to yourself", { status: 400 });
+      return NextResponse.json(
+        { error: "Cannot send message to yourself" },
+        { status: 400 }
+      );
     }
 
-    // Check if user is admin
     if (sessionUser.isAdmin) {
-      return new Response("Admins cannot send messages", { status: 403 });
+      return NextResponse.json(
+        { error: "Admins cannot send messages" },
+        { status: 403 }
+      );
     }
 
     const newMessage = new Message({
@@ -84,13 +122,13 @@ export const POST = async (request) => {
       phone,
       name,
       body: message,
-      readByAdmin: false, // Make sure this is set
+      readByAdmin: false,
       readByAdminUser: null,
       readAt: null,
     });
 
+    await newMessage.validate(); // Explicit validation
     const savedMessage = await newMessage.save();
-    // Debug logging
 
     return NextResponse.json({
       message: "Message sent successfully",
@@ -99,7 +137,7 @@ export const POST = async (request) => {
   } catch (error) {
     console.error("Message creation error:", error);
     return NextResponse.json(
-      { error: "Something went wrong" },
+      { error: error.message || "Failed to send message" },
       { status: 500 }
     );
   }

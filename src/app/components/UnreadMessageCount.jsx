@@ -5,6 +5,7 @@ import { useGlobalContext } from "@/context/GlobalContext";
 
 export default function UnreadMessageCount() {
   const { unreadCount, setUnreadCount } = useGlobalContext();
+  const [intervalId, setIntervalId] = useState(null);
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -20,11 +21,20 @@ export default function UnreadMessageCount() {
       }
     };
 
+    // Initial fetch
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
 
-    return () => clearInterval(interval);
-  }, [setUnreadCount]);
+    // Set up interval
+    const id = setInterval(fetchUnreadCount, 30000);
+    setIntervalId(id);
+
+    // Cleanup function
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [intervalId, setUnreadCount]);
 
   return (
     unreadCount > 0 && (
