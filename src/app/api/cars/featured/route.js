@@ -1,5 +1,5 @@
-import connect from "../../../lib/mongodb/mongoose.js";
-import Car from "../../../lib/models/car.model.js";
+import connect from "../../../../lib/mongodb/mongoose.js";
+import Car from "../../../../lib/models/car.model.js";
 
 import { NextResponse } from "next/server";
 
