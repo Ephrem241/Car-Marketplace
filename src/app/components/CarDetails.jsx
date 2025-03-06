@@ -25,7 +25,7 @@ export default function CarDetails({ car }) {
               Price
             </p>
             <p className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400">
-              ${car.price.toLocaleString()}
+              {car.price.toLocaleString()}
             </p>
           </div>
         </div>

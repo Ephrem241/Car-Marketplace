@@ -31,7 +31,7 @@ export default function CarCard({ car }) {
             </p>
           </div>
           <div className="px-4 py-2 text-lg font-bold text-blue-600 bg-blue-50 rounded-xl shadow-sm dark:bg-blue-900/30 dark:text-blue-400 group-hover:shadow-md transition-shadow">
-            ${car.price.toLocaleString()}
+            {car.price.toLocaleString()}
           </div>
         </div>
 
