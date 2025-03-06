@@ -28,7 +28,8 @@ export default function Message({ message, onMessageChange }) {
       const { readByAdmin } = await response.json();
       setIsRead(readByAdmin);
 
-      setUnreadCount((prev) => (isRead ? prev + 1 : prev - 1));
+      // Fetch updated unread count
+      const countResponse = await fetch("/api/messages/unread-count");
       if (countResponse.ok) {
         const count = await countResponse.json();
         setUnreadCount(count);
