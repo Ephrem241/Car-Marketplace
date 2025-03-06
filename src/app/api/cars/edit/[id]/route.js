@@ -2,14 +2,36 @@ import connect from "../../../../../lib/mongodb/mongoose.js";
 import { currentUser } from "@clerk/nextjs/server";
 import Car from "../../../../../lib/models/car.model.js";
 import { NextResponse } from "next/server";
-import rateLimit from "express-rate-limit";
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-});
+// Simple in-memory store for rate limiting
+const rateLimit = new Map();
+const RATE_LIMIT_DURATION = 15 * 60 * 1000; // 15 minutes
+const MAX_REQUESTS = 100;
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const userRequests = rateLimit.get(ip) || { count: 0, timestamp: now };
+
+  if (now - userRequests.timestamp > RATE_LIMIT_DURATION) {
+    userRequests.count = 1;
+    userRequests.timestamp = now;
+  } else if (userRequests.count >= MAX_REQUESTS) {
+    return false;
+  } else {
+    userRequests.count++;
+  }
+
+  rateLimit.set(ip, userRequests);
+  return true;
+}
 
 export async function PUT(request, { params }) {
+  // Get IP for rate limiting
+  const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const user = await currentUser();
 
   try {
@@ -100,21 +122,3 @@ export async function PUT(request, { params }) {
     );
   }
 }
-
-// Add client-side image size and format validation
-const validateImage = (file) => {
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  if (file.size > maxSize) {
-    throw new Error("Image size must be less than 5MB");
-  }
-};
-
-// Add form reset after successful submission
-const resetForm = () => {
-  setFields({
-    kph: "",
-    carClass: "",
-    // ... other fields
-  });
-  setFiles([]);
-};
