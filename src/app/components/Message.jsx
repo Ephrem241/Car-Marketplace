@@ -27,9 +27,13 @@ export default function Message({ message, onMessageChange }) {
 
       const { readByAdmin } = await response.json();
       setIsRead(readByAdmin);
-      setUnreadCount((prevCount) =>
-        readByAdmin ? prevCount - 1 : prevCount + 1
-      );
+
+      setUnreadCount((prev) => (isRead ? prev + 1 : prev - 1));
+      if (countResponse.ok) {
+        const count = await countResponse.json();
+        setUnreadCount(count);
+      }
+
       toast.success(readByAdmin ? "Marked as read" : "Marked as new");
       onMessageChange();
     } catch (error) {
@@ -48,9 +52,14 @@ export default function Message({ message, onMessageChange }) {
       }
 
       setIsDeleting(true);
-      if (!isRead) {
-        setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
+
+      // Fetch updated unread count
+      const countResponse = await fetch("/api/messages/unread-count");
+      if (countResponse.ok) {
+        const count = await countResponse.json();
+        setUnreadCount(count);
       }
+
       toast.success("Message deleted successfully");
       onMessageChange();
     } catch (error) {

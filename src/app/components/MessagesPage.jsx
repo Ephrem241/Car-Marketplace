@@ -35,11 +35,7 @@ export default function MessagesPage() {
         }
 
         // Sort messages by date, newest first
-        const sortedMessages = data.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        setMessages(sortedMessages);
-        toast.success(`Loaded ${sortedMessages.length} messages`);
+        setMessages(data);
       } catch (error) {
         setError(
           error.message || "Unable to load messages. Please try again later."

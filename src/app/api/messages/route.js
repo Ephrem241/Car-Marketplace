@@ -2,7 +2,7 @@ import connect from "../../../lib/mongodb/mongoose.js";
 import Message from "../../../lib/models/messages.model.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
 import { NextResponse } from "next/server";
-import { Mongoose } from "mongoose";
+import { Types } from "mongoose";
 import { rateLimit } from "@/utils/rateLimit";
 
 export const dynamic = "force-dynamic";
@@ -93,11 +93,15 @@ export const POST = async (request) => {
       }
     }
 
-    if (!Mongoose.Types.ObjectId.isValid(recipient)) {
+    if (!Types.ObjectId.isValid(recipient)) {
       return NextResponse.json(
         { error: "Invalid recipient ID" },
         { status: 400 }
       );
+    }
+
+    if (!Types.ObjectId.isValid(car)) {
+      return NextResponse.json({ error: "Invalid car ID" }, { status: 400 });
     }
 
     if (sessionUser.id.toString() === recipient) {

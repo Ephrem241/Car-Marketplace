@@ -24,7 +24,11 @@ export const POST = async (req) => {
     const sortDirection = data.sort === "asc" ? 1 : -1;
 
     const [users, totalUsers, lastMonthUsers] = await Promise.all([
-      User.find().sort({ createdAt: sortDirection }).skip(skip).limit(limit),
+      User.find()
+        .sort({ createdAt: sortDirection })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       User.countDocuments(),
       User.countDocuments({
         createdAt: {

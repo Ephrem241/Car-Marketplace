@@ -26,10 +26,12 @@ export default function CarContactForm({ car }) {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
-    if (!formData.message.trim()) newErrors.message = "Message is required";
-    if (formData.phone && !/^\+?[0-9\s\-()]{7,}$/.test(formData.phone)) {
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?[0-9\s\-()]{7,}$/.test(formData.phone)) {
       newErrors.phone = "Invalid phone format";
     }
+    if (!formData.message.trim()) newErrors.message = "Message is required";
     return newErrors;
   };
 
@@ -105,16 +107,21 @@ export default function CarContactForm({ car }) {
         Contact Car Manager
       </h3>
       {!isSignedIn ? (
-        <p>
-          <Link href="/sign-in" className="text-blue-600 hover:underline">
+        <p className="dark:text-gray-300">
+          <Link
+            href="/sign-in"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
             Log in
           </Link>{" "}
           to send a message
         </p>
       ) : user.publicMetadata.isAdmin ? (
-        <p>Admins cannot send messages to themselves</p>
+        <p className="dark:text-gray-300">
+          Admins cannot send messages to themselves
+        </p>
       ) : wasSubmitted ? (
-        <p className="mb-4 text-green-500">
+        <p className="mb-4 text-green-500 dark:text-green-400">
           Your message has been sent successfully
         </p>
       ) : (
@@ -127,13 +134,17 @@ export default function CarContactForm({ car }) {
               value={formData.name}
               onChange={handleChange}
               placeholder="Full Name"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
+                errors.name
+                  ? "border-red-500 dark:border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
               }`}
               disabled={isSubmitting}
             />
             {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+              <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                {errors.name}
+              </p>
             )}
           </div>
 
@@ -145,13 +156,17 @@ export default function CarContactForm({ car }) {
               value={formData.email}
               onChange={handleChange}
               placeholder="Email"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                errors.email ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
+                errors.email
+                  ? "border-red-500 dark:border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
               }`}
               disabled={isSubmitting}
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+              <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                {errors.email}
+              </p>
             )}
           </div>
 
@@ -162,14 +177,18 @@ export default function CarContactForm({ car }) {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="Phone (optional)"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                errors.phone ? "border-red-500" : "border-gray-300"
+              placeholder="Phone"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
+                errors.phone
+                  ? "border-red-500 dark:border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
               }`}
               disabled={isSubmitting}
             />
             {errors.phone && (
-              <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
+              <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                {errors.phone}
+              </p>
             )}
           </div>
 
@@ -181,13 +200,17 @@ export default function CarContactForm({ car }) {
               onChange={handleChange}
               placeholder="Your message"
               rows="4"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                errors.message ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
+                errors.message
+                  ? "border-red-500 dark:border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
               }`}
               disabled={isSubmitting}
             />
             {errors.message && (
-              <p className="mt-1 text-sm text-red-500">{errors.message}</p>
+              <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                {errors.message}
+              </p>
             )}
           </div>
 

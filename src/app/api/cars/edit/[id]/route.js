@@ -2,6 +2,12 @@ import connect from "../../../../../lib/mongodb/mongoose.js";
 import { currentUser } from "@clerk/nextjs/server";
 import Car from "../../../../../lib/models/car.model.js";
 import { NextResponse } from "next/server";
+import rateLimit from "express-rate-limit";
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 
 export async function PUT(request, { params }) {
   const user = await currentUser();
@@ -47,6 +53,14 @@ export async function PUT(request, { params }) {
       );
     }
 
+    // Validate image count
+    if (data.images && data.images.length > 4) {
+      return NextResponse.json(
+        { error: "Maximum of 4 images allowed" },
+        { status: 400 }
+      );
+    }
+
     // Field whitelisting
     const validFields = [
       "make",
@@ -86,3 +100,21 @@ export async function PUT(request, { params }) {
     );
   }
 }
+
+// Add client-side image size and format validation
+const validateImage = (file) => {
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    throw new Error("Image size must be less than 5MB");
+  }
+};
+
+// Add form reset after successful submission
+const resetForm = () => {
+  setFields({
+    kph: "",
+    carClass: "",
+    // ... other fields
+  });
+  setFiles([]);
+};

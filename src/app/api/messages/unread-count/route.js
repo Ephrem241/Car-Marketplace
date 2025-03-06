@@ -1,24 +1,25 @@
 import connect from "../../../../lib/mongodb/mongoose.js";
 import Message from "../../../../lib/models/messages.model.js";
-import { getSessionUser } from "@/utils/getSessionUser.js";
+import { getSessionUser } from "../../../../utils/getSessionUser.js";
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import User from "../../../../lib/models/user.model.js";
 
 export const dynamic = "force-dynamic";
 
 export const GET = async (request) => {
-  headers();
-
   try {
     await connect();
     const sessionUser = await getSessionUser();
 
-    if (!sessionUser) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    if (!sessionUser || !sessionUser.isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!sessionUser.isAdmin) {
-      return NextResponse.json({ error: "Not an admin" }, { status: 401 });
+    // Get user from MongoDB to check admin status
+    const user = await User.findOne({ clerkId: sessionUser.clerkId }).lean();
+
+    if (!user?.isAdmin) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
 
     const count = await Message.countDocuments({
@@ -27,6 +28,7 @@ export const GET = async (request) => {
 
     return NextResponse.json(count);
   } catch (error) {
+    console.error("Error in unread-count:", error);
     return NextResponse.json(
       { error: "Error fetching unread count" },
       { status: 500 }

@@ -11,6 +11,7 @@ const GlobalContext = createContext();
 export function GlobalProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Remove the entire useEffect with interval
   useEffect(() => {
     const fetchUnreadMessages = async () => {
       try {

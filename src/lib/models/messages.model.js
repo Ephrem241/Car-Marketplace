@@ -30,10 +30,7 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
+
     readByAdmin: {
       type: Boolean,
       default: false,

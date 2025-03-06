@@ -19,18 +19,19 @@ export const getSessionUser = async () => {
     // Connect to MongoDB
     await connect();
 
-    // Get the MongoDB user data
-    const userMongoId = await User.findOne({ clerkId: user.id });
+    // Get the MongoDB user data and convert to plain object
+    const userMongoId = await User.findOne({ clerkId: user.id }).lean();
 
     if (!userMongoId) {
       console.log("No MongoDB user found for Clerk ID:", user.id);
       return null;
     }
 
+    // Create a plain object with only the necessary fields
     const sessionUser = {
-      id: userMongoId._id,
+      id: userMongoId._id.toString(), // Convert ObjectId to string
       clerkId: user.id,
-      isAdmin: userMongoId.isAdmin || user.publicMetadata.isAdmin,
+      isAdmin: userMongoId.isAdmin,
       email: user.emailAddresses[0]?.emailAddress,
       username: user.username || userMongoId.username,
     };

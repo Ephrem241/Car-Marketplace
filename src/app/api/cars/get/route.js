@@ -24,7 +24,11 @@ export const POST = async (req) => {
     const sortDirection = data.sort === "asc" ? 1 : -1;
 
     const [posts, totalPosts, lastMonthPosts] = await Promise.all([
-      Car.find().sort({ createdAt: sortDirection }).skip(skip).limit(limit),
+      Car.find()
+        .sort({ createdAt: sortDirection })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       Car.countDocuments(),
       Car.countDocuments({
         createdAt: {

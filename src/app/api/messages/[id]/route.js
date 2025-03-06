@@ -53,12 +53,14 @@ export const DELETE = async (request, { params }) => {
     }
 
     // Allow the sender or an admin to delete the message
-    if (
-      sessionUser.id.toString() === message.sender.toString() ||
-      sessionUser.isAdmin
-    ) {
-      await message.deleteOne();
-      return new Response("Message deleted successfully", { status: 200 });
+    if (sessionUser.isAdmin || message.sender.toString() === sessionUser.id) {
+      await Message.findByIdAndDelete(id);
+      return new Response("Message deleted successfully", {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
     }
 
     return new Response("Unauthorized", { status: 403 });

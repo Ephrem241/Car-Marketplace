@@ -44,7 +44,8 @@ export const GET = async (request) => {
     const cars = await Car.find(query)
       .sort(sortOptions)
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await Car.countDocuments(query);
 

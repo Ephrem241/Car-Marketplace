@@ -23,6 +23,8 @@ export default function CarUpdateForm({ id }) {
   const [files, setFiles] = useState([]);
   const [imageUploadProgress, setImageUploadProgress] = useState({});
   const [imageUploadError, setImageUploadError] = useState(null);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [fields, setFields] = useState({
     kph: "",
     carClass: "",

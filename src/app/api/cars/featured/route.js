@@ -14,7 +14,7 @@ export async function GET(request) {
 
     const cars = await Car.find({
       is_featured: true,
-    });
+    }).lean();
 
     const query = {};
 

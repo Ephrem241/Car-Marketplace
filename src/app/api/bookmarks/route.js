@@ -4,6 +4,7 @@ import User from "../../../lib/models/user.model.js";
 import Car from "../../../lib/models/car.model.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
 import { Types } from "mongoose";
+import Bookmark from "../../../lib/models/bookmark.model.js";
 
 export const dynamic = "force-dynamic";
 
@@ -11,89 +12,44 @@ export const dynamic = "force-dynamic";
 export async function POST(request) {
   try {
     await connect();
+    const sessionUser = await getSessionUser();
+
+    if (!sessionUser) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
 
     const { carId } = await request.json();
 
-    // Validate carId format
-    if (!Types.ObjectId.isValid(carId)) {
+    if (!carId) {
       return NextResponse.json(
-        { error: "Invalid car ID format" },
+        { error: "Car ID is required" },
         { status: 400 }
       );
     }
 
-    const sessionUser = await getSessionUser();
+    const existingBookmark = await Bookmark.findOne({
+      userId: sessionUser.id,
+      carId,
+    });
 
-    if (!sessionUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Add check for admin role
-    if (sessionUser.role === "admin") {
+    if (existingBookmark) {
       return NextResponse.json(
-        { error: "Admins cannot bookmark cars" },
-        { status: 403 }
+        { error: "Car already bookmarked" },
+        { status: 400 }
       );
     }
 
-    // Find user by clerkId instead of userId
-    const user = await User.findOne({ clerkId: sessionUser.id });
-
-    if (!user) {
-      // Create new user with all required fields from session
-      const fallbackUsername = sessionUser.email
-        ? sessionUser.email.split("@")[0]
-        : sessionUser.id;
-
-      const newUser = new User({
-        clerkId: sessionUser.id,
-        email: sessionUser.email,
-        firstName: sessionUser.firstName,
-        lastName: sessionUser.lastName,
-        username: sessionUser.username || fallbackUsername,
-        bookmarks: [carId],
-      });
-      await newUser.save();
-      return NextResponse.json({
-        success: true,
-        isBookmarked: true,
-        message: "User created and car bookmarked",
-      });
-    }
-
-    // Check if car exists
-    const car = await Car.findById(carId);
-    if (!car) {
-      return NextResponse.json({ error: "Car not found" }, { status: 404 });
-    }
-
-    // Convert carId to ObjectId for comparison
-    const carObjectId = new Types.ObjectId(carId);
-
-    // Check if car is already bookmarked
-    const isBookmarked = user.bookmarks.some((id) => id.equals(carObjectId));
-
-    // Update bookmarks using findOneAndUpdate
-    const updateOperation = isBookmarked
-      ? { $pull: { bookmarks: carObjectId } }
-      : { $push: { bookmarks: carObjectId } };
-
-    await User.findOneAndUpdate({ clerkId: sessionUser.id }, updateOperation, {
-      runValidators: false,
+    const bookmark = new Bookmark({
+      userId: sessionUser.id,
+      carId,
     });
 
-    return NextResponse.json({
-      success: true,
-      isBookmarked: !isBookmarked,
-      message: isBookmarked ? "Bookmark removed" : "Car bookmarked",
-    });
+    await bookmark.save();
+    return NextResponse.json(bookmark, { status: 201 });
   } catch (error) {
-    console.error("Bookmark error:", error.message);
+    console.error("Error creating bookmark:", error);
     return NextResponse.json(
-      {
-        error: "Something went wrong",
-        details: error.message,
-      },
+      { error: "Failed to create bookmark" },
       { status: 500 }
     );
   }
@@ -103,53 +59,61 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     await connect();
-
     const sessionUser = await getSessionUser();
 
     if (!sessionUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const user = await User.findOne({ clerkId: sessionUser.id });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const searchParams = request.nextUrl.searchParams;
-    const page = Math.max(1, parseInt(searchParams.get("page")) || 1); // Ensure minimum of 1
-    const limit = Math.min(
-      Math.max(1, parseInt(searchParams.get("limit")) || 10),
-      50
-    ); // Between 1 and 50
-    const skip = (page - 1) * limit;
-
-    const bookmarkedCars = await Car.find({
-      _id: { $in: user.bookmarks },
-    })
-      .skip(skip)
-      .limit(limit)
+    const bookmarks = await Bookmark.find({ userId: sessionUser.id })
+      .populate("carId")
       .sort({ createdAt: -1 });
 
-    const total = await Car.countDocuments({
-      _id: { $in: user.bookmarks },
+    return NextResponse.json(bookmarks);
+  } catch (error) {
+    console.error("Error fetching bookmarks:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch bookmarks" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    await connect();
+    const sessionUser = await getSessionUser();
+
+    if (!sessionUser) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const { carId } = await request.json();
+
+    if (!carId) {
+      return NextResponse.json(
+        { error: "Car ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const result = await Bookmark.findOneAndDelete({
+      userId: sessionUser.id,
+      carId,
     });
 
-    return NextResponse.json({
-      cars: bookmarkedCars,
-      pagination: {
-        total,
-        page,
-        pages: Math.ceil(total / limit),
-      },
-    });
+    if (!result) {
+      return NextResponse.json(
+        { error: "Bookmark not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ message: "Bookmark removed successfully" });
   } catch (error) {
-    console.error("GET bookmarks error:", error);
+    console.error("Error removing bookmark:", error);
     return NextResponse.json(
-      {
-        error: "Something went wrong",
-        details: error.message,
-      },
+      { error: "Failed to remove bookmark" },
       { status: 500 }
     );
   }
