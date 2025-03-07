@@ -6,30 +6,28 @@ import { useUser } from "@clerk/nextjs";
 
 export default function UnreadMessageCount() {
   const { unreadCount, setUnreadCount } = useGlobalContext();
-  const [intervalId, setIntervalId] = useState(null);
+
   const { user, isLoaded } = useUser();
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await fetch("/api/messages/unread-count");
+      if (!response.ok) throw new Error("Failed to fetch unread count");
+      const data = await response.json();
+      setUnreadCount(data);
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
 
   useEffect(() => {
     if (!isLoaded || !user?.publicMetadata?.isAdmin) return;
-
-    const fetchUnreadCount = async () => {
-      try {
-        const response = await fetch("/api/messages/unread-count");
-        if (!response.ok) throw new Error("Failed to fetch unread count");
-        const data = await response.json();
-        setUnreadCount(data);
-      } catch (error) {
-        console.error("Error fetching unread count:", error);
-      }
-    };
-
-    // Initial fetch
     fetchUnreadCount();
 
-    // Set up interval
     const id = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(id);
-  }, [setUnreadCount, user, isLoaded]);
+  }, [isLoaded, user, setUnreadCount]);
+
   // Only show badge if user is admin and there are unread messages
   if (!user?.publicMetadata?.isAdmin || !unreadCount) {
     return null;

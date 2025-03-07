@@ -6,7 +6,6 @@ import {
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
-import { app } from "@/firebase";
 
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -32,9 +31,11 @@ export default function CarAddForm() {
     transmission: "",
     year: "",
     price: "",
+    mileage: "",
     features: [],
     images: [],
     description: "",
+    link: "",
   });
 
   const handleChange = (e) => {
@@ -62,10 +63,27 @@ export default function CarAddForm() {
         return;
       }
 
+      // Check file sizes and types before upload
+      const invalidFiles = files.filter(
+        (file) =>
+          file.size > 5 * 1024 * 1024 || // 5MB
+          !file.type.startsWith("image/")
+      );
+
+      if (invalidFiles.length > 0) {
+        setImageUploadError(
+          "Invalid files detected. Images must be under 5MB and be valid image files."
+        );
+        return;
+      }
+
+      // Check total number of images (existing + new)
       const totalImages = fields.images.length + files.length;
       if (totalImages > 4) {
         setImageUploadError(
-          `You can only upload up to 4 images (${fields.images.length} already uploaded)`
+          `Maximum 4 images allowed. You can only add ${
+            4 - fields.images.length
+          } more image(s).`
         );
         setFiles([]);
         return;
@@ -76,7 +94,7 @@ export default function CarAddForm() {
 
       const uploadPromises = files.map(async (file) => {
         const fileName = new Date().getTime() + "-" + file.name;
-        const storageRef = ref(storage, fileName);
+        const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         return new Promise((resolve, reject) => {
@@ -91,7 +109,6 @@ export default function CarAddForm() {
                 [fileName]: progress,
               }));
             },
-
             (error) => reject(error),
             async () => {
               try {
@@ -110,12 +127,26 @@ export default function CarAddForm() {
         .filter((result) => result.status === "fulfilled")
         .map((result) => result.value);
 
+      // Final check to ensure we don't exceed 4 images
+      if (fields.images.length + successfulUploads.length > 4) {
+        setImageUploadError("Cannot add more than 4 images in total");
+        return;
+      }
+
       setFields((prev) => ({
         ...prev,
         images: [...prev.images, ...successfulUploads],
       }));
     } catch (error) {
-      setImageUploadError("Image upload failed");
+      // Enhanced error handling
+      let errorMessage = "Image upload failed";
+      if (error.code === "storage/unauthorized") {
+        errorMessage = "You don't have permission to upload images";
+      } else if (error.code === "storage/retry-limit-exceeded") {
+        errorMessage =
+          "Upload blocked due to rate limiting. Please wait a minute before trying again.";
+      }
+      setImageUploadError(errorMessage);
     } finally {
       setFiles([]);
       setImageUploadProgress({});
@@ -137,10 +168,15 @@ export default function CarAddForm() {
     if (isSubmitting) return;
 
     try {
+      const formData = new FormData();
+      Object.entries(fields).forEach(([key, value]) => {
+        if (key !== "images") formData.append(key, value);
+      });
+      files.forEach((file) => formData.append("images", file));
+
       const response = await fetch("/api/cars", {
         method: "POST",
-        body: JSON.stringify(fields),
-        headers: { "Content-Type": "application/json" },
+        body: formData,
       });
 
       const data = await response.json();
@@ -185,13 +221,13 @@ export default function CarAddForm() {
           value={fields.carClass}
           onChange={handleChange}
         >
+          <option value="">Select Car Class</option>
+          <option value="Economy">Economy</option>
+          <option value="Luxury">Luxury</option>
+          <option value="Sports">Sports</option>
           <option value="SUV">SUV</option>
-          <option value="Sedan">Sedan</option>
           <option value="Truck">Truck</option>
-          <option value="Hatchback">Hatchback</option>
-          <option value="Convertible">Convertible</option>
-          <option value="Coupe">Coupe</option>
-          <option value="Other">Other</option>
+          <option value="Van">Van</option>
         </select>
       </div>
       <div className="mb-4">
@@ -233,6 +269,37 @@ export default function CarAddForm() {
           value={fields.description}
           onChange={handleChange}
         ></textarea>
+      </div>
+
+      <div className="mb-4">
+        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
+          External Link (Optional)
+        </label>
+        <input
+          type="url"
+          name="link"
+          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+          placeholder="https://example.com"
+          value={fields.link}
+          onChange={handleChange}
+        />
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Add a link to more details about the car (e.g., tiktok link)
+        </p>
+      </div>
+
+      <div className="w-full pl-2 sm:w-1/3">
+        <label htmlFor="mileage" className="block mb-2 font-bold">
+          Mileage
+        </label>
+        <input
+          className="block mb-2 font-semibold text-gray-700 dark:text-gray-200"
+          type="number"
+          name="mileage"
+          required
+          value={fields.mileage}
+          onChange={handleChange}
+        />
       </div>
 
       <div className="flex flex-wrap mb-4">

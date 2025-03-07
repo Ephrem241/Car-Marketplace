@@ -18,9 +18,9 @@ export default function Header() {
         className="self-center text-sm font-semibold whitespace-nowrap sm:text-xl dark:text-white"
       >
         <span className="px-2 py-1 text-white rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
-          Zena
+          GODE & MILLION
         </span>
-        Car&apos;s
+        CAR MARKET
       </Link>
 
       <div className="flex gap-2 md:order-2">

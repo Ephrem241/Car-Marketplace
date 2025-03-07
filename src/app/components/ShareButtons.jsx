@@ -4,24 +4,16 @@ import {
   TwitterShareButton,
   WhatsappShareButton,
   EmailShareButton,
+  TelegramShareButton,
   FacebookIcon,
   WhatsappIcon,
   EmailIcon,
   XIcon,
+  TelegramIcon,
 } from "react-share";
 
 export default function ShareButtons({ car }) {
-  const shareUrl = `${process.env.NEXT_PUBLIC_DOMAIN}/cars/${car._id}`;
-
-  // Create a safe string formatter helper
-  const formatText = (text) => {
-    return text ? text.toString().replace(/\s/g, "") : "";
-  };
-
-  // Create hashtag string
-  const hashtagString = `#${formatText(car.brand)}${formatText(
-    car.model
-  )}${formatText(car.year)}ForSale`;
+  const shareUrl = `${process.env.NEXT_PUBLIC_DOMAIN}/cars/${car?._id}`;
 
   return (
     <div className="w-full px-2 py-4 transition-colors duration-200 bg-white rounded-lg dark:bg-gray-800">
@@ -30,40 +22,29 @@ export default function ShareButtons({ car }) {
       </h3>
       <div className="flex justify-center gap-4 pb-5">
         <div className="transition-transform duration-200 hover:scale-110">
-          <FacebookShareButton
-            url={shareUrl}
-            quote={car.brand || ""}
-            hashtag={hashtagString}
-          >
+          <FacebookShareButton url={shareUrl}>
             <FacebookIcon size={36} round={true} />
           </FacebookShareButton>
         </div>
         <div className="transition-transform duration-200 hover:scale-110">
-          <TwitterShareButton
-            url={shareUrl}
-            title={car.brand || ""}
-            hashtag={[hashtagString]}
-          >
+          <TwitterShareButton url={shareUrl}>
             <XIcon size={36} round={true} />
           </TwitterShareButton>
         </div>
         <div className="transition-transform duration-200 hover:scale-110">
-          <WhatsappShareButton
-            url={shareUrl}
-            title={car.brand || ""}
-            separator=":: "
-          >
+          <WhatsappShareButton url={shareUrl}>
             <WhatsappIcon size={36} round={true} />
           </WhatsappShareButton>
         </div>
         <div className="transition-transform duration-200 hover:scale-110">
-          <EmailShareButton
-            url={shareUrl}
-            subject={car.brand || ""}
-            body={`Check out this car for sale: ${shareUrl}`}
-          >
+          <EmailShareButton url={shareUrl}>
             <EmailIcon size={36} round={true} />
           </EmailShareButton>
+        </div>
+        <div className="transition-transform duration-200 hover:scale-110">
+          <TelegramShareButton url={shareUrl}>
+            <TelegramIcon size={36} round={true} />
+          </TelegramShareButton>
         </div>
       </div>
     </div>

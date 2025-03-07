@@ -6,6 +6,9 @@ import { NextResponse } from "next/server";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { storage } from "@/firebase.js";
+import { getAuth } from "firebase/auth";
+import { app } from "@/firebase.js";
+import { signInToFirebase } from "@/utils/firebaseAuth.js";
 
 export async function GET(request) {
   try {
@@ -76,36 +79,55 @@ export const POST = async (request) => {
     await connect();
     const user = await getSessionUser(request);
 
+    // Check for admin status
     if (!user?.publicMetadata?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get Firebase auth instance
+    const auth = getAuth(app);
+
+    // Ensure Firebase is authenticated before upload
+    if (!auth.currentUser) {
+      // You'll need to implement this function to get a Firebase token from your backend
+      await signInToFirebase(user.id);
     }
 
     const formData = await request.formData();
     const imageFiles = formData.getAll("images");
 
     // Upload images to Firebase
-    const uploadedUrls = await Promise.all(
-      imageFiles.map(async (file) => {
-        if (!(file instanceof File)) return null;
+    const uploadPromises = imageFiles.map(async (file) => {
+      if (!(file instanceof File)) return null;
 
-        const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
+      const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
 
-        // Convert File to ArrayBuffer
-        const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
+      // Convert File to ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
 
-        // Upload file
-        const snapshot = await uploadBytes(storageRef, uint8Array, {
-          contentType: file.type,
-        });
+      // Add metadata for rate limiting
+      const metadata = {
+        contentType: file.type,
+        metadata: {
+          lastUpload: new Date().toISOString(),
+          uploadedBy: user.id,
+        },
+      };
 
-        // Get download URL
+      try {
+        // Upload file with metadata
+        const snapshot = await uploadBytes(storageRef, uint8Array, metadata);
         return await getDownloadURL(snapshot.ref);
-      })
-    );
+      } catch (error) {
+        console.error("Upload error:", error);
+        return null;
+      }
+    });
 
     // Filter out any null values from failed uploads
-    const validImageUrls = uploadedUrls.filter((url) => url !== null);
+    const uploadResults = await Promise.all(uploadPromises);
+    const validImageUrls = uploadResults.filter((url) => url !== null);
 
     // Build car data
     const carData = {
@@ -119,7 +141,7 @@ export const POST = async (request) => {
       fuel_type: formData.get("fuel_type"),
       transmission: formData.get("transmission"),
       kph: Number(formData.get("kph")),
-      mileage: Number(formData.get("mileage")), // Added mileage field
+      mileage: Number(formData.get("mileage")),
       features: formData.getAll("features"),
       images: validImageUrls,
     };

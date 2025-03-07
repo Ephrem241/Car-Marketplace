@@ -7,7 +7,8 @@ import {
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
-import { app } from "@/firebase";
+import { v4 as uuidv4 } from "uuid";
+import app from "@/firebase";
 
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -19,12 +20,11 @@ export default function CarUpdateForm({ id }) {
   const [publishError, setPublishError] = useState(null);
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+
   const [files, setFiles] = useState([]);
   const [imageUploadProgress, setImageUploadProgress] = useState({});
   const [imageUploadError, setImageUploadError] = useState(null);
-  const [isImageUploading, setIsImageUploading] = useState(false);
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+
   const [fields, setFields] = useState({
     kph: "",
     carClass: "",
@@ -33,11 +33,13 @@ export default function CarUpdateForm({ id }) {
     make: "",
     model: "",
     transmission: "",
+    mileage: "",
     year: "",
     price: "",
     features: [],
     images: [],
     description: "",
+    link: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -77,10 +79,13 @@ export default function CarUpdateForm({ id }) {
         return;
       }
 
+      // Check total number of images (existing + new)
       const totalImages = fields.images.length + files.length;
       if (totalImages > 4) {
         setImageUploadError(
-          `Maximum 4 images allowed (${fields.images.length} already uploaded)`
+          `Maximum 4 images allowed. You can only add ${
+            4 - fields.images.length
+          } more image(s).`
         );
         setFiles([]);
         return;
@@ -98,7 +103,7 @@ export default function CarUpdateForm({ id }) {
       const storage = getStorage(app);
       const uploadPromises = files.map(async (file) => {
         const fileName = `${Date.now()}-${file.name}`;
-        const storageRef = ref(storage, fileName);
+        const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         return new Promise((resolve, reject) => {
@@ -114,7 +119,14 @@ export default function CarUpdateForm({ id }) {
               }));
             },
             (error) => reject(error),
-            async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+            async () => {
+              try {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(url);
+              } catch (error) {
+                reject(error);
+              }
+            }
           );
         });
       });
@@ -131,8 +143,14 @@ export default function CarUpdateForm({ id }) {
       }
 
       const successfulUploads = results
-        .filter(({ status }) => status === "fulfilled")
-        .map(({ value }) => value);
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
+
+      // Final check to ensure we don't exceed 4 images
+      if (fields.images.length + successfulUploads.length > 4) {
+        setImageUploadError("Cannot add more than 4 images in total");
+        return;
+      }
 
       setFields((prev) => ({
         ...prev,
@@ -151,7 +169,7 @@ export default function CarUpdateForm({ id }) {
     setPublishError(null);
 
     try {
-      const numericFields = ["year", "price", "kph"];
+      const numericFields = ["year", "price", "kph", "mileage"];
       const formattedData = {
         ...fields,
         ...Object.fromEntries(
@@ -164,22 +182,33 @@ export default function CarUpdateForm({ id }) {
 
       const res = await fetch(`/api/cars/edit/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(formattedData),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.message || "Failed to update car");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update car");
       }
+
+      const data = await res.json();
 
       setPublishError({
         type: "success",
         message: "Car updated successfully!",
       });
-      setTimeout(() => router.push(`/cars/${data._id}`), 1500);
+
+      // Use router.refresh() to update the page data
+      router.refresh();
+
+      // Wait a bit before redirecting to ensure the user sees the success message
+      setTimeout(() => {
+        router.push(`/cars/${id}`);
+      }, 1500);
     } catch (error) {
+      console.error("Update error:", error);
       setPublishError({
         type: "error",
         message: error.message || "Failed to update car",
@@ -196,22 +225,33 @@ export default function CarUpdateForm({ id }) {
         if (!id) return;
 
         const res = await fetch(`/api/cars/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch car");
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to fetch car");
+        }
+
         const data = await res.json();
         setFields({
           ...data,
-          year: data.year.toString(),
-          price: data.price.toString(),
+          year: data.year?.toString() || "",
+          price: data.price?.toString() || "",
           kph: data.kph?.toString() || "",
+          mileage: data.mileage?.toString() || "",
         });
       } catch (error) {
-        setPublishError({ type: "error", message: error.message });
+        console.error("Fetch error:", error);
+        setPublishError({
+          type: "error",
+          message: error.message || "Failed to fetch car",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCar();
+    if (id) {
+      fetchCar();
+    }
   }, [id]);
 
   return (
@@ -244,13 +284,13 @@ export default function CarUpdateForm({ id }) {
               value={fields.carClass}
               onChange={handleChange}
             >
+              <option value="">Select Car Class</option>
+              <option value="Economy">Economy</option>
+              <option value="Luxury">Luxury</option>
+              <option value="Sports">Sports</option>
               <option value="SUV">SUV</option>
-              <option value="Sedan">Sedan</option>
               <option value="Truck">Truck</option>
-              <option value="Hatchback">Hatchback</option>
-              <option value="Convertible">Convertible</option>
-              <option value="Coupe">Coupe</option>
-              <option value="Other">Other</option>
+              <option value="Van">Van</option>
             </select>
           </div>
           <div className="mb-4">
@@ -292,6 +332,33 @@ export default function CarUpdateForm({ id }) {
               value={fields.description}
               onChange={handleChange}
             ></textarea>
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
+              External Link (Optional)
+            </label>
+            <input
+              type="url"
+              name="link"
+              className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+              placeholder="https://example.com"
+              value={fields.link}
+              onChange={handleChange}
+            />
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Add a link to more details about the car (e.g., tiktok website)
+            </p>
+          </div>
+          <div className="w-full pl-2 sm:w-1/3">
+            <label className="block mb-2 font-bold">Mileage</label>
+            <input
+              type="number"
+              name="mileage"
+              required
+              value={fields.mileage}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+            />
           </div>
 
           <div className="flex flex-wrap mb-4">

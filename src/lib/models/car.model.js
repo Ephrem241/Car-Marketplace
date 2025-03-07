@@ -49,6 +49,10 @@ const CarSchema = new Schema(
       required: true,
       enum: ["a", "m"],
     },
+    mileage: {
+      type: Number,
+      required: true,
+    },
     year: {
       type: Number,
       required: true,
@@ -82,6 +86,16 @@ const CarSchema = new Schema(
         },
       },
     ],
+    link: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (v) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: "Invalid URL format",
+      },
+    },
   },
   {
     timestamps: true,

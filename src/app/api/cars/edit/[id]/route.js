@@ -45,7 +45,19 @@ export async function PUT(request, { params }) {
     }
 
     // Validation improved
-    const requiredFields = ["make", "model", "year", "price", "kph"];
+    const requiredFields = [
+      "make",
+      "model",
+      "year",
+      "price",
+      "kph",
+      "mileage",
+      "carClass",
+      "drive",
+      "fuel_type",
+      "transmission",
+    ];
+
     const missingFields = requiredFields.filter((field) => !data[field]);
     if (missingFields.length > 0) {
       return NextResponse.json(
@@ -55,7 +67,7 @@ export async function PUT(request, { params }) {
     }
 
     // Numeric validation with type conversion
-    const numericFields = ["year", "price", "kph"];
+    const numericFields = ["year", "price", "kph", "mileage"];
     for (const field of numericFields) {
       const value = Number(data[field]);
       if (isNaN(value) || value < 0) {
@@ -97,6 +109,7 @@ export async function PUT(request, { params }) {
       "features",
       "images",
       "description",
+      "mileage",
     ];
 
     const sanitizedData = Object.keys(data).reduce((acc, key) => {
@@ -104,7 +117,7 @@ export async function PUT(request, { params }) {
       return acc;
     }, {});
 
-    const updatedCar = await Car.findByIdAndUpdate(params.id, data, {
+    const updatedCar = await Car.findByIdAndUpdate(params.id, sanitizedData, {
       new: true,
       runValidators: true,
     });

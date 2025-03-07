@@ -26,6 +26,10 @@ export const GET = async (request, { params }) => {
 
 export const DELETE = async (request, { params }) => {
   const user = await currentUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   try {
     const carId = params.id;
 
@@ -37,7 +41,7 @@ export const DELETE = async (request, { params }) => {
     }
 
     if (
-      !user.publicMetadata.isAdmin ||
+      !user.publicMetadata.isAdmin &&
       user.publicMetadata.userMongoId !== car.createdBy.toString()
     ) {
       return new Response("Unauthorized", { status: 401 });

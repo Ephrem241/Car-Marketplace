@@ -78,8 +78,7 @@ export default function MessagesPage() {
           </h1>
           <div className="mb-4">
             <span className="text-blue-600 dark:text-blue-400 font-semibold">
-              Unread Messages:{" "}
-              {messages.filter((msg) => !msg.readByAdmin).length}
+              Unread Messages: {unreadCount}
             </span>
           </div>
           {messages.length === 0 ? (

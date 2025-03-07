@@ -46,7 +46,7 @@ export const POST = async (request) => {
   try {
     // Apply rate limiting
     try {
-      await limiter.check(request, 10, "message-send"); // 10 requests per minute
+      await limiter.check(request, 10, `message-send-${sessionUser.id}`);
     } catch {
       return NextResponse.json(
         { error: "Rate limit exceeded" },
@@ -111,13 +111,13 @@ export const POST = async (request) => {
       );
     }
 
-    if (sessionUser.isAdmin) {
+    const dbUser = await User.findOne({ clerkId: sessionUser.clerkId });
+    if (dbUser?.isAdmin) {
       return NextResponse.json(
         { error: "Admins cannot send messages" },
         { status: 403 }
       );
     }
-
     const newMessage = new Message({
       sender: sessionUser.id,
       recipient,
