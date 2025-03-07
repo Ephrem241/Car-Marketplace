@@ -8,7 +8,8 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
-import app from "@/firebase";
+import { app, storage } from "@/firebase";
+import { getAuth } from "firebase/auth";
 
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -100,7 +101,7 @@ export default function CarUpdateForm({ id }) {
         return;
       }
 
-      const storage = getStorage(app);
+      const auth = getAuth(app);
       const uploadPromises = files.map(async (file) => {
         const fileName = `${Date.now()}-${file.name}`;
         const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
