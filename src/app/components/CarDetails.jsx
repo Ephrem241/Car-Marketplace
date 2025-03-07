@@ -1,6 +1,6 @@
 import Image from "next/image";
 import React from "react";
-import { FaCheck } from "react-icons/fa";
+import { FaCheck, FaExternalLinkAlt } from "react-icons/fa";
 
 export default function CarDetails({ car }) {
   return (
@@ -114,6 +114,20 @@ export default function CarDetails({ car }) {
             )}
           </div>
         </div>
+
+        {car.link && (
+          <div className="mt-8">
+            <a
+              href={car.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+            >
+              View More Details
+              <FaExternalLinkAlt className="w-4 h-4" />
+            </a>
+          </div>
+        )}
       </div>
     </main>
   );

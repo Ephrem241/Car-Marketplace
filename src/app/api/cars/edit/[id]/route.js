@@ -110,6 +110,7 @@ export async function PUT(request, { params }) {
       "images",
       "description",
       "mileage",
+      "link",
     ];
 
     const sanitizedData = Object.keys(data).reduce((acc, key) => {
