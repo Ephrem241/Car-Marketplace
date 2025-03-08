@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import User from "../../../../../lib/models/user.model.js";
 import connect from "../../../../../lib/mongodb/mongoose.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
 import { Types } from "mongoose";
+import Bookmark from "../../../../../lib/models/bookmark.model.js";
 
 export async function GET(request, { params }) {
   try {
@@ -19,17 +19,12 @@ export async function GET(request, { params }) {
       return NextResponse.json({ isBookmarked: false }, { status: 401 });
     }
 
-    const user = await User.findOne({ clerkId: sessionUser.id }).lean();
-    if (!user) {
-      return NextResponse.json({ isBookmarked: false }, { status: 404 });
-    }
+    const bookmark = await Bookmark.findOne({
+      userId: sessionUser.id,
+      carId: new Types.ObjectId(carId),
+    }).lean();
 
-    const carObjectId = new Types.ObjectId(carId);
-    const isBookmarked = user.bookmarks.some(
-      (bookmarkId) => bookmarkId.toString() === carObjectId.toString()
-    );
-
-    return NextResponse.json({ isBookmarked });
+    return NextResponse.json({ isBookmarked: !!bookmark });
   } catch (error) {
     console.error("Error checking bookmark:", error);
     return NextResponse.json(

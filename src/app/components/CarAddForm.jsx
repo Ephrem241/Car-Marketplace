@@ -1,26 +1,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
-
-import { CircularProgressbar } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-
-import { Alert, Button, FileInput } from "flowbite-react";
-import Image from "next/image";
+import { useUser } from "@clerk/nextjs";
+import { Alert, Button } from "flowbite-react";
+import CarFormFields from "./shared/CarFormFields";
+import ImageUpload from "./shared/ImageUpload";
 
 export default function CarAddForm() {
+  const { user } = useUser();
   const [publishError, setPublishError] = useState(null);
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [files, setFiles] = useState([]);
-  const [imageUploadProgress, setImageUploadProgress] = useState({});
-  const [imageUploadError, setImageUploadError] = useState(null);
   const [fields, setFields] = useState({
     kph: "",
     carClass: "",
@@ -39,9 +28,37 @@ export default function CarAddForm() {
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const newValue =
-      type === "number" ? Number(value) || 0 : checked ? checked : value;
+    const { name, value, type } = e.target;
+    let newValue = value;
+
+    if (type === "number") {
+      switch (name) {
+        case "year":
+          const yearNum = parseInt(value);
+          const currentYear = new Date().getFullYear();
+          if (!yearNum || yearNum < 1900 || yearNum > currentYear + 1) {
+            newValue = "";
+          } else {
+            newValue = yearNum;
+          }
+          break;
+        case "price":
+          const priceNum = parseFloat(value);
+          newValue = !isNaN(priceNum) && priceNum >= 0 ? priceNum : "";
+          break;
+        case "kph":
+          const kphNum = parseInt(value);
+          newValue = !isNaN(kphNum) && kphNum >= 0 ? kphNum : "";
+          break;
+        case "mileage":
+          const mileageNum = parseInt(value);
+          newValue = !isNaN(mileageNum) && mileageNum >= 0 ? mileageNum : "";
+          break;
+        default:
+          newValue = value ? Number(value) : "";
+      }
+    }
+
     setFields((prevFields) => ({ ...prevFields, [name]: newValue }));
   };
 
@@ -55,112 +72,43 @@ export default function CarAddForm() {
     }));
   };
 
-  const handleUploadImages = async () => {
-    try {
-      setImageUploadError(null);
-      if (!files || files.length === 0) {
-        setImageUploadError("Please select at least one image");
-        return;
-      }
-
-      // Check file sizes and types before upload
-      const invalidFiles = files.filter(
-        (file) =>
-          file.size > 5 * 1024 * 1024 || // 5MB
-          !file.type.startsWith("image/")
-      );
-
-      if (invalidFiles.length > 0) {
-        setImageUploadError(
-          "Invalid files detected. Images must be under 5MB and be valid image files."
-        );
-        return;
-      }
-
-      // Check total number of images (existing + new)
-      const totalImages = fields.images.length + files.length;
-      if (totalImages > 4) {
-        setImageUploadError(
-          `Maximum 4 images allowed. You can only add ${
-            4 - fields.images.length
-          } more image(s).`
-        );
-        setFiles([]);
-        return;
-      }
-
-      const storage = getStorage(app);
-      setUploading(true);
-
-      const uploadPromises = files.map(async (file) => {
-        const fileName = new Date().getTime() + "-" + file.name;
-        const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        return new Promise((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const progress = Math.round(
-                (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-              );
-              setImageUploadProgress((prev) => ({
-                ...prev,
-                [fileName]: progress,
-              }));
-            },
-            (error) => reject(error),
-            async () => {
-              try {
-                const url = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(url);
-              } catch (error) {
-                reject(error);
-              }
-            }
-          );
-        });
-      });
-
-      const urls = await Promise.allSettled(uploadPromises);
-      const successfulUploads = urls
-        .filter((result) => result.status === "fulfilled")
-        .map((result) => result.value);
-
-      // Final check to ensure we don't exceed 4 images
-      if (fields.images.length + successfulUploads.length > 4) {
-        setImageUploadError("Cannot add more than 4 images in total");
-        return;
-      }
-
-      setFields((prev) => ({
-        ...prev,
-        images: [...prev.images, ...successfulUploads],
-      }));
-    } catch (error) {
-      // Enhanced error handling
-      let errorMessage = "Image upload failed";
-      if (error.code === "storage/unauthorized") {
-        errorMessage = "You don't have permission to upload images";
-      } else if (error.code === "storage/retry-limit-exceeded") {
-        errorMessage =
-          "Upload blocked due to rate limiting. Please wait a minute before trying again.";
-      }
-      setImageUploadError(errorMessage);
-    } finally {
-      setFiles([]);
-      setImageUploadProgress({});
-      setUploading(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setPublishError(null);
 
+    // Validate required fields
+    const requiredFields = [
+      "make",
+      "model",
+      "year",
+      "price",
+      "kph",
+      "mileage",
+      "carClass",
+      "drive",
+      "fuel_type",
+      "transmission",
+      "description",
+    ];
+
+    const missingFields = requiredFields.filter((field) => !fields[field]);
+    if (missingFields.length > 0) {
+      setPublishError({
+        type: "error",
+        message: `Please fill in all required fields: ${missingFields.join(
+          ", "
+        )}`,
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     if (fields.images.length === 0) {
-      setPublishError("Please upload at least one image");
+      setPublishError({
+        type: "error",
+        message: "Please upload at least one image",
+      });
       setIsSubmitting(false);
       return;
     }
@@ -168,15 +116,24 @@ export default function CarAddForm() {
     if (isSubmitting) return;
 
     try {
-      const formData = new FormData();
-      Object.entries(fields).forEach(([key, value]) => {
-        if (key !== "images") formData.append(key, value);
-      });
-      files.forEach((file) => formData.append("images", file));
+      // Convert numeric fields
+      const numericFields = ["year", "price", "kph", "mileage"];
+      const formattedData = {
+        ...fields,
+        ...Object.fromEntries(
+          Object.entries(fields).map(([key, value]) => [
+            key,
+            numericFields.includes(key) ? Number(value) : value,
+          ])
+        ),
+      };
 
       const response = await fetch("/api/cars", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formattedData),
       });
 
       const data = await response.json();
@@ -186,10 +143,25 @@ export default function CarAddForm() {
 
       router.push(`/cars/${data._id}`);
     } catch (error) {
+      console.error("Add car error:", error);
+      let errorMessage = "Failed to add car";
+
+      if (error.message) {
+        errorMessage = error.message;
+      }
+
+      if (error.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = `${errorMessage} (Status: ${error.response.status})`;
+        }
+      }
+
       setPublishError({
         type: "error",
-        message:
-          error.message || "Network error - please check your connection",
+        message: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
@@ -199,457 +171,33 @@ export default function CarAddForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      encType="multipart/form-data"
       className="max-w-2xl p-6 mx-auto bg-white rounded-lg shadow-md dark:bg-gray-800"
     >
       <h2 className="mb-6 text-3xl font-semibold text-center text-gray-800 dark:text-white">
         Add Car
       </h2>
 
-      <div className="mb-4">
-        <label
-          htmlFor="carClass"
-          className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
-        >
-          Car Class
-        </label>
-        <select
-          id="carClass"
-          name="carClass"
-          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-          required
-          value={fields.carClass}
-          onChange={handleChange}
-        >
-          <option value="">Select Car Class</option>
-          <option value="Economy">Economy</option>
-          <option value="Luxury">Luxury</option>
-          <option value="Sports">Sports</option>
-          <option value="SUV">SUV</option>
-          <option value="Truck">Truck</option>
-          <option value="Van">Van</option>
-        </select>
-      </div>
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
-          Car Make
-        </label>
-        <input
-          type="text"
-          name="make"
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-          required
-          value={fields.make}
-          onChange={handleChange}
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
-          Car Model
-        </label>
-        <input
-          type="text"
-          name="model"
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-          required
-          value={fields.model}
-          onChange={handleChange}
-        />
-      </div>
+      <CarFormFields
+        fields={fields}
+        handleChange={handleChange}
+        handleFeaturesChange={handleFeaturesChange}
+      />
 
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
-          Description
-        </label>
-        <textarea
-          name="description"
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-          rows="4"
-          required
-          value={fields.description}
-          onChange={handleChange}
-        ></textarea>
-      </div>
-
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
-          External Link (Optional)
-        </label>
-        <input
-          type="url"
-          name="link"
-          className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-          placeholder="https://example.com"
-          value={fields.link}
-          onChange={handleChange}
-        />
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Add a link to more details about the car (e.g., tiktok link)
-        </p>
-      </div>
-
-      <div className="w-full pl-2 sm:w-1/3">
-        <label htmlFor="mileage" className="block mb-2 font-bold">
-          Mileage
-        </label>
-        <input
-          className="block mb-2 font-semibold text-gray-700 dark:text-gray-200"
-          type="number"
-          name="mileage"
-          required
-          value={fields.mileage}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="flex flex-wrap mb-4">
-        <div className="w-full pr-2 sm:w-1/3">
-          <label
-            htmlFor="transmission"
-            className="block mb-2 font-semibold text-gray-700 dark:text-gray-200"
-          >
-            Transmission
-          </label>
-          <select
-            id="transmission"
-            name="transmission"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            required
-            value={fields.transmission}
-            onChange={handleChange}
-          >
-            <option value="">Select Transmission</option>
-            <option value="a">a</option>
-            <option value="m">m</option>
-          </select>
-        </div>
-
-        <div className="w-full px-2 sm:w-1/3">
-          <label
-            htmlFor="drive"
-            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
-          >
-            Drive
-          </label>
-          <select
-            id="drive"
-            name="drive"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            required
-            value={fields.drive}
-            onChange={handleChange}
-          >
-            <option value="">Select Drive Type</option>
-            <option value="FWD">FWD</option>
-            <option value="RWD">RWD</option>
-            <option value="AWD">AWD</option>
-            <option value="4WD">4WD</option>
-          </select>
-        </div>
-        <div className="w-full pl-2 sm:w-1/3">
-          <label
-            htmlFor="kph"
-            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
-          >
-            KPH
-          </label>
-          <input
-            type="number"
-            id="kph"
-            name="kph"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            required
-            value={fields.kph}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="w-full pl-2 sm:w-1/3">
-          <label
-            htmlFor="year"
-            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
-          >
-            Year
-          </label>
-          <input
-            type="number"
-            id="year"
-            name="year"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            required
-            value={fields.year}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="w-full pl-2 sm:w-1/3">
-          <label
-            htmlFor="fuel_type"
-            className="block mb-2 font-bold text-gray-700 dark:text-gray-200"
-          >
-            Fuel Type
-          </label>
-          <select
-            id="fuel_type"
-            name="fuel_type"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            required
-            value={fields.fuel_type}
-            onChange={handleChange}
-          >
-            <option value="">Select Fuel Type</option>
-            <option value="Petrol">Petrol</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Electric">Electric</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div className="w-full pl-2 sm:w-1/3">
-          <label className="block mb-2 font-bold text-gray-700 dark:text-gray-200">
-            Car Price
-          </label>
-          <input
-            type="number"
-            name="price"
-            className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            required
-            min="0"
-            step="0.01"
-            value={fields.price}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold text-gray-700 dark:text-gray-200">
-          Features
-        </label>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-          <div>
-            <input
-              type="checkbox"
-              id="feature_CD Player"
-              name="features"
-              value="CD Player"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("CD Player")}
-              onChange={handleFeaturesChange}
-            />
-            <label htmlFor="feature_CD Player" className="dark:text-gray-200">
-              CD Player
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Bluetooth"
-              name="features"
-              value="Bluetooth"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Bluetooth")}
-              onChange={handleFeaturesChange}
-            />
-            <label htmlFor="feature_Bluetooth" className="dark:text-gray-200">
-              Bluetooth
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Navigation"
-              name="features"
-              value="Navigation"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Navigation")}
-              onChange={handleFeaturesChange}
-            />
-            <label htmlFor="feature_Navigation" className="dark:text-gray-200">
-              Navigation
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Sunroof"
-              name="features"
-              value="Sunroof"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Sunroof")}
-              onChange={handleFeaturesChange}
-            />
-            <label htmlFor="feature_Sunroof" className="dark:text-gray-200">
-              Sunroof
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Leather_Seats"
-              name="features"
-              value="Leather Seats"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Leather Seats")}
-              onChange={handleFeaturesChange}
-            />
-            <label
-              htmlFor="feature_Leather_Seats"
-              className="dark:text-gray-200"
-            >
-              Leather Seats
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Backup_Camera"
-              name="features"
-              value="Backup Camera"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Backup Camera")}
-              onChange={handleFeaturesChange}
-            />
-            <label
-              htmlFor="feature_Backup_Camera"
-              className="dark:text-gray-200"
-            >
-              Backup Camera
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Cruise_Control"
-              name="features"
-              value="Cruise Control"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Cruise Control")}
-              onChange={handleFeaturesChange}
-            />
-            <label
-              htmlFor="feature_Cruise_Control"
-              className="dark:text-gray-200"
-            >
-              Cruise Control
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Heated_Seats"
-              name="features"
-              value="Heated Seats"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Heated Seats")}
-              onChange={handleFeaturesChange}
-            />
-            <label
-              htmlFor="feature_Heated_Seats"
-              className="dark:text-gray-200"
-            >
-              Heated Seats
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Satellite_Radio"
-              name="features"
-              value="Satellite Radio"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Satellite Radio")}
-              onChange={handleFeaturesChange}
-            />
-            <label
-              htmlFor="feature_Satellite_Radio"
-              className="dark:text-gray-200"
-            >
-              Satellite Radio
-            </label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="feature_Parking_Sensors"
-              name="features"
-              value="Parking Sensors"
-              className="mr-2 dark:bg-gray-700 dark:border-gray-600"
-              checked={fields.features.includes("Parking Sensors")}
-              onChange={handleFeaturesChange}
-            />
-            <label
-              htmlFor="feature_Parking_Sensors"
-              className="dark:text-gray-200"
-            >
-              Parking Sensors
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4 p-4 border-2 border-gray-300 border-dashed rounded-lg dark:border-gray-600">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-4">
-            <FileInput
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files))}
-              disabled={uploading || fields.images.length >= 4}
-              className="cursor-pointer dark:text-gray-200"
-              helperText={`${fields.images.length}/4 images uploaded`}
-            />
-            <Button
-              type="button"
-              gradientDuoTone="purpleToBlue"
-              size="sm"
-              outline
-              onClick={handleUploadImages}
-              disabled={uploading || files.length === 0}
-            >
-              {uploading ? "Uploading..." : "Upload Images"}
-            </Button>
-          </div>
-          {fields.images.length >= 4 && (
-            <p className="text-sm text-red-500 dark:text-red-400">
-              Maximum number of images (4) reached
-            </p>
-          )}
-        </div>
-
-        {Object.entries(imageUploadProgress).length > 0 && (
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(imageUploadProgress).map(([fileName, progress]) => (
-              <div key={fileName} className="flex flex-col items-center gap-2">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {fileName}
-                </span>
-                <div className="w-16 h-16">
-                  <CircularProgressbar value={progress} text={`${progress}%`} />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {fields.images.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {fields.images.map((img, index) => (
-              <div key={index} className="relative w-40 h-32">
-                <Image
-                  src={img}
-                  alt={`Preview ${index + 1}`}
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <ImageUpload
+        images={fields.images}
+        onImagesChange={(newImages) =>
+          setFields((prev) => ({ ...prev, images: newImages }))
+        }
+      />
 
       {publishError && <Alert color="failure">{publishError.message}</Alert>}
 
-      <Button type="submit" className="w-full mt-6" disabled={isSubmitting}>
+      <Button
+        type="submit"
+        className="w-full mt-6"
+        disabled={isSubmitting}
+        gradientDuoTone="purpleToBlue"
+      >
         {isSubmitting ? "Adding Car..." : "Add Car"}
       </Button>
     </form>

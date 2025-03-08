@@ -3,7 +3,8 @@ import { app } from "@/firebase";
 
 export async function signInToFirebase(userId) {
   try {
-    const response = await fetch("/api/auth/firebase", {
+    // Get a custom token from your backend
+    const response = await fetch("/api/auth/firebase-token", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -17,9 +18,11 @@ export async function signInToFirebase(userId) {
 
     const { token } = await response.json();
     const auth = getAuth(app);
+
+    // Sign in with the custom token
     await signInWithCustomToken(auth, token);
   } catch (error) {
-    console.error("Firebase authentication error:", error);
+    console.error("Firebase auth error:", error);
     throw error;
   }
 }

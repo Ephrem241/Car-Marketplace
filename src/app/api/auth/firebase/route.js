@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getSessionUser } from "@/utils/getSessionUser";
 
 // Initialize Firebase Admin if not already initialized
 const FIREBASE_ADMIN_APPS = getApps();

@@ -169,13 +169,17 @@ export default function DashboardComp() {
                   <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
                     <Table.Cell>
                       <Image
-                        src={post.images[0] || "/default-car.jpg"}
-                        alt={`${post.make} ${post.model}`}
+                        src={
+                          post?.images?.[0]
+                            ? post.images[0]
+                            : "/images/default-car.jpg"
+                        }
+                        alt={`${post?.make || "Car"} ${post?.model || ""}`}
                         width={40}
                         height={40}
                         className="h-10 bg-gray-500 rounded-md w-14"
                         onError={(e) => {
-                          e.target.src = "/default-car.jpg";
+                          e.target.src = "/images/default-car.jpg";
                         }}
                       />
                     </Table.Cell>

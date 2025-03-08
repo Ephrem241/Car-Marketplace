@@ -50,7 +50,7 @@ export default function CarPage() {
       {loading && <Spinner loading={loading} />}
       {!loading && car && (
         <>
-          <CarHeaderImage image={car.images[0]} />
+          <CarHeaderImage image={car.images?.[0]} />
           <section>
             <div className="container px-6 py-6 m-auto">
               <Link
@@ -75,7 +75,9 @@ export default function CarPage() {
               </div>
             </div>
           </section>
-          <CarImages images={car.images} />
+          {car.images && car.images.length > 0 && (
+            <CarImages images={car.images} />
+          )}
         </>
       )}
     </>

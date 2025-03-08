@@ -120,15 +120,14 @@ export default function DashPosts() {
                     <Table.Cell>
                       <Link href={`/cars/${car._id}`}>
                         <Image
-                          src={car.images[0] || "/default-car.jpg"}
-                          alt={car.make}
-                          width={100}
-                          height={100}
-                          className="object-cover w-20 h-10 bg-gray-500 dark:bg-gray-700"
+                          src={car?.images?.[0] || "/images/default-car.jpg"}
+                          alt={`${car?.make || "Car"} ${car?.model || ""}`}
+                          width={40}
+                          height={40}
+                          className="h-10 bg-gray-500 rounded-md w-14"
                           onError={(e) => {
-                            e.target.src = "/default-car.jpg";
+                            e.target.src = "/images/default-car.jpg";
                           }}
-                          priority={false}
                         />
                       </Link>
                     </Table.Cell>

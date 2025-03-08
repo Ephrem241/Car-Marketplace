@@ -11,7 +11,7 @@ export default function CarCard({ car }) {
       <div className="relative w-full aspect-[16/10] overflow-hidden rounded-t-2xl">
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10" />
         <Image
-          src={car.images[0]}
+          src={car.images[0] || "/images/default-car.jpg"}
           alt={`${car.make} ${car.model}`}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-110"

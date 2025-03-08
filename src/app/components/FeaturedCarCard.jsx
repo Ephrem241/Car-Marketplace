@@ -8,7 +8,7 @@ export default function FeaturedCarCard({ car }) {
       {/* Image Container */}
       <div className="relative w-full aspect-[16/10] overflow-hidden">
         <Image
-          src={car.images[0]}
+          src={car.images[0] || "/images/default-car.jpg"}
           alt={`${car.make} ${car.model}`}
           fill
           className="object-cover transition-transform duration-500 hover:scale-110"

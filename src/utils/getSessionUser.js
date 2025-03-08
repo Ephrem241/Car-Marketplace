@@ -5,8 +5,8 @@ import connect from "../lib/mongodb/mongoose.js";
 
 export const getSessionUser = async () => {
   try {
-    // Get headers first
-    const headersList = headers();
+    // Get headers first and await them
+    await headers();
 
     // Then get the current user
     const user = await currentUser();

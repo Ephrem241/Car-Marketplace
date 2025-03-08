@@ -12,6 +12,7 @@ export default function MessagesPage() {
   const [error, setError] = useState(null);
   const { user, isLoaded } = useUser();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -48,6 +49,12 @@ export default function MessagesPage() {
 
     fetchMessages();
   }, [user, isLoaded, refreshKey]);
+
+  useEffect(() => {
+    // Update unread count whenever messages change
+    const count = messages.filter((message) => !message.read).length;
+    setUnreadCount(count);
+  }, [messages]);
 
   if (!isLoaded) {
     return <Spinner loading={true} />;

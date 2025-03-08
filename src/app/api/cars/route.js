@@ -89,89 +89,120 @@ export const POST = async (request) => {
 
     // Ensure Firebase is authenticated before upload
     if (!auth.currentUser) {
-      // You'll need to implement this function to get a Firebase token from your backend
       await signInToFirebase(user.id);
     }
 
-    const formData = await request.formData();
-    const imageFiles = formData.getAll("images");
+    let carData;
+    let images = [];
+    const contentType = request.headers.get("content-type");
 
-    // Upload images to Firebase
-    const uploadPromises = imageFiles.map(async (file) => {
-      if (!(file instanceof File)) return null;
-
-      const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
-
-      // Convert File to ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      // Add metadata for rate limiting
-      const metadata = {
-        contentType: file.type,
-        metadata: {
-          lastUpload: new Date().toISOString(),
-          uploadedBy: user.id,
-        },
+    if (contentType?.includes("application/json")) {
+      // Handle JSON request
+      const jsonData = await request.json();
+      carData = {
+        make: jsonData.make,
+        model: jsonData.model,
+        year: Number(jsonData.year),
+        price: Number(jsonData.price),
+        description: jsonData.description,
+        carClass: jsonData.carClass,
+        drive: jsonData.drive,
+        fuel_type: jsonData.fuel_type,
+        transmission: jsonData.transmission,
+        kph: Number(jsonData.kph),
+        mileage: Number(jsonData.mileage),
+        features: jsonData.features || [],
+        images: jsonData.images || [],
       };
+    } else {
+      // Handle FormData request
+      const formData = await request.formData();
+      const imageFiles = formData.getAll("images");
 
-      try {
-        // Upload file with metadata
-        const snapshot = await uploadBytes(storageRef, uint8Array, metadata);
-        return await getDownloadURL(snapshot.ref);
-      } catch (error) {
-        console.error("Upload error:", error);
-        return null;
-      }
-    });
+      // Upload images to Firebase
+      const uploadPromises = imageFiles.map(async (file) => {
+        if (!(file instanceof File)) return null;
 
-    // Filter out any null values from failed uploads
-    const uploadResults = await Promise.all(uploadPromises);
-    const validImageUrls = uploadResults.filter((url) => url !== null);
+        const storageRef = ref(storage, `car-images/${uuidv4()}-${file.name}`);
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
 
-    // Build car data
-    const carData = {
-      make: formData.get("make"),
-      model: formData.get("model"),
-      year: Number(formData.get("year")),
-      price: Number(formData.get("price")),
-      description: formData.get("description"),
-      carClass: formData.get("carClass"),
-      drive: formData.get("drive"),
-      fuel_type: formData.get("fuel_type"),
-      transmission: formData.get("transmission"),
-      kph: Number(formData.get("kph")),
-      mileage: Number(formData.get("mileage")),
-      features: formData.getAll("features"),
-      images: validImageUrls,
-    };
+        const metadata = {
+          contentType: file.type,
+          metadata: {
+            lastUpload: new Date().toISOString(),
+            uploadedBy: user.id,
+          },
+        };
+
+        try {
+          const snapshot = await uploadBytes(storageRef, uint8Array, metadata);
+          return await getDownloadURL(snapshot.ref);
+        } catch (error) {
+          console.error("Upload error:", error);
+          return null;
+        }
+      });
+
+      const uploadResults = await Promise.all(uploadPromises);
+      const validImageUrls = uploadResults.filter((url) => url !== null);
+
+      carData = {
+        make: formData.get("make"),
+        model: formData.get("model"),
+        year: Number(formData.get("year")),
+        price: Number(formData.get("price")),
+        description: formData.get("description"),
+        carClass: formData.get("carClass"),
+        drive: formData.get("drive"),
+        fuel_type: formData.get("fuel_type"),
+        transmission: formData.get("transmission"),
+        kph: Number(formData.get("kph")),
+        mileage: Number(formData.get("mileage")),
+        features: formData.getAll("features"),
+        images: validImageUrls,
+      };
+    }
 
     // Validate required fields
-    const requiredFields = ["make", "model", "year", "price"];
+    const requiredFields = [
+      "make",
+      "model",
+      "year",
+      "price",
+      "carClass",
+      "drive",
+      "fuel_type",
+      "transmission",
+      "kph",
+      "mileage",
+      "description",
+    ];
     for (const field of requiredFields) {
       if (!carData[field]) {
-        return new Response(JSON.stringify({ error: `${field} is required` }), {
-          status: 400,
-        });
+        return NextResponse.json(
+          { error: `${field} is required` },
+          { status: 400 }
+        );
       }
     }
 
-    const year = Number(formData.get("year"));
-    if (isNaN(year)) {
+    const year = Number(carData.year);
+    if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 1) {
       return NextResponse.json({ error: "Invalid year" }, { status: 400 });
     }
 
     // Validate images
-    if (validImageUrls.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "At least one image is required" }),
+    if (!carData.images || carData.images.length === 0) {
+      return NextResponse.json(
+        { error: "At least one image is required" },
         { status: 400 }
       );
     }
 
-    if (validImageUrls.length > 4) {
-      return new Response(
-        JSON.stringify({ error: "Maximum of 4 images allowed" }),
+    if (carData.images.length > 4) {
+      return NextResponse.json(
+        { error: "Maximum of 4 images allowed" },
         { status: 400 }
       );
     }
@@ -181,16 +212,19 @@ export const POST = async (request) => {
     const newCar = new Car(carData);
     await newCar.save();
 
-    return new Response(
-      JSON.stringify({ message: "Car Added Successfully", _id: newCar._id }),
+    return NextResponse.json(
+      {
+        message: "Car Added Successfully",
+        _id: newCar._id,
+      },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error adding car:", error);
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         error: error.message || "Failed to add car",
-      }),
+      },
       { status: 500 }
     );
   }

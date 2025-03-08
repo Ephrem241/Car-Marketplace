@@ -1,6 +1,7 @@
 import Image from "next/image";
 import React from "react";
 import { FaCheck, FaExternalLinkAlt } from "react-icons/fa";
+import PropTypes from "prop-types";
 
 export default function CarDetails({ car }) {
   return (
@@ -40,20 +41,24 @@ export default function CarDetails({ car }) {
             {
               icon: "/tire.svg",
               label: "Drive Type",
-              value: car.drive.toUpperCase(),
+              value: car.drive?.toUpperCase() || "N/A",
             },
             {
               icon: "/gas.svg",
               label: "Speed",
-              value: `${car.kph} KPH`,
+              value: car.kph ? `${car.kph.toLocaleString()} KPH` : "N/A",
             },
             {
               label: "Year",
-              value: car.year,
+              value: car.year || "N/A",
             },
             {
               label: "Fuel Type",
-              value: car.fuel_type,
+              value: car.fuel_type || "N/A",
+            },
+            {
+              label: "Mileage",
+              value: car.mileage ? `${car.mileage.toLocaleString()} km` : "N/A",
             },
           ].map((spec, index) => (
             <div
@@ -132,3 +137,21 @@ export default function CarDetails({ car }) {
     </main>
   );
 }
+
+CarDetails.propTypes = {
+  car: PropTypes.shape({
+    make: PropTypes.string.isRequired,
+    model: PropTypes.string.isRequired,
+    carClass: PropTypes.string.isRequired,
+    price: PropTypes.number.isRequired,
+    transmission: PropTypes.string,
+    drive: PropTypes.string,
+    kph: PropTypes.number,
+    year: PropTypes.number,
+    fuel_type: PropTypes.string,
+    mileage: PropTypes.number,
+    description: PropTypes.string,
+    features: PropTypes.arrayOf(PropTypes.string),
+    link: PropTypes.string,
+  }).isRequired,
+};
