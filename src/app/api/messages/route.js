@@ -3,14 +3,11 @@ import Message from "../../../lib/models/messages.model.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
-import { rateLimit } from "@/utils/rateLimit";
+import { RateLimiter } from "@/utils/rateLimit";
 
 export const dynamic = "force-dynamic";
 
-const limiter = rateLimit({
-  interval: 60 * 1000, // 1 minute
-  uniqueTokenPerInterval: 500,
-});
+const limiter = new RateLimiter(60 * 1000, 500); // 1 minute interval, 500 requests
 
 // GET /api/messages
 
