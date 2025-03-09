@@ -5,9 +5,9 @@ import ThemeCom from "./components/ThemeCom";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeModeScript } from "flowbite-react";
 import Footer from "./components/Footer";
-import { ToastContainer } from "react-toastify";
 import { GlobalProvider } from "@/context/GlobalContext";
 import "photoswipe/dist/photoswipe.css";
+import ClientToastContainer from "./components/ClientToastContainer";
 
 export const metadata = {
   title: "Premium Cars for Sale | Best Deals on Quality Vehicles",
@@ -35,14 +35,13 @@ export default function RootLayout({ children }) {
           <head>
             <ThemeModeScript />
           </head>
-
           <body className="relative">
             <ThemeProvider>
               <ThemeCom>
                 <Header />
                 {children}
                 <Footer />
-                <ToastContainer />
+                <ClientToastContainer />
               </ThemeCom>
             </ThemeProvider>
           </body>

@@ -52,6 +52,11 @@ const CarSchema = new Schema(
     mileage: {
       type: Number,
       required: true,
+      min: [0, "Mileage cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Mileage must be a whole number",
+      },
     },
     year: {
       type: Number,

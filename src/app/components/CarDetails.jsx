@@ -5,18 +5,18 @@ import PropTypes from "prop-types";
 
 export default function CarDetails({ car }) {
   return (
-    <main className="max-w-6xl mx-auto">
-      <div className="p-8 bg-white shadow-xl rounded-2xl dark:bg-gray-800/90 border border-gray-100 dark:border-gray-700">
+    <main className="mx-auto max-w-6xl">
+      <div className="p-8 bg-white rounded-2xl border border-gray-100 shadow-xl dark:bg-gray-800/90 dark:border-gray-700">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-lg font-medium text-blue-600 dark:text-blue-400">
               {car.make}
             </p>
-            <h1 className="mt-2 text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+            <h1 className="mt-2 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
               {car.model}
             </h1>
             <div className="mt-4">
-              <span className="px-4 py-2 text-sm font-medium text-orange-700 rounded-full bg-orange-50 dark:bg-orange-900/30 dark:text-orange-400 shadow-sm">
+              <span className="px-4 py-2 text-sm font-medium text-orange-700 bg-orange-50 rounded-full shadow-sm dark:bg-orange-900/30 dark:text-orange-400">
                 {car.carClass}
               </span>
             </div>
@@ -25,13 +25,13 @@ export default function CarDetails({ car }) {
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Price
             </p>
-            <p className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400">
+            <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
               {car.price.toLocaleString()}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-8 p-6 mt-8 bg-gradient-to-br from-gray-50 to-white rounded-2xl dark:from-gray-800 dark:to-gray-700/50 shadow-inner">
+        <div className="grid grid-cols-2 gap-4 p-6 mt-8 bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-inner md:grid-cols-5 md:gap-8 dark:from-gray-800 dark:to-gray-700/50">
           {[
             {
               icon: "/steering-wheel.svg",
@@ -63,7 +63,7 @@ export default function CarDetails({ car }) {
           ].map((spec, index) => (
             <div
               key={index}
-              className="flex flex-col items-center gap-2 p-4 bg-white/50 rounded-xl dark:bg-gray-800/50 hover:shadow-md transition-shadow"
+              className="flex flex-col gap-2 items-center p-4 rounded-xl transition-shadow bg-white/50 dark:bg-gray-800/50 hover:shadow-md"
             >
               {spec.icon && (
                 <Image
@@ -85,16 +85,16 @@ export default function CarDetails({ car }) {
         </div>
 
         <div className="mt-12">
-          <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+          <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
             Description
           </h3>
-          <p className="mt-4 leading-relaxed text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl">
+          <p className="p-6 mt-4 leading-relaxed text-gray-600 bg-gray-50 rounded-xl dark:text-gray-300 dark:bg-gray-800/50">
             {car.description}
           </p>
         </div>
 
         <div className="mt-12">
-          <h3 className="mb-6 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+          <h3 className="mb-6 text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
             Features
           </h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -102,9 +102,9 @@ export default function CarDetails({ car }) {
               car.features.map((feature, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/90 dark:to-gray-700/50 hover:shadow-md transition-shadow"
+                  className="flex gap-3 items-center p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl transition-shadow dark:from-gray-800/90 dark:to-gray-700/50 hover:shadow-md"
                 >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30">
+                  <div className="flex justify-center items-center w-8 h-8 bg-green-100 rounded-full dark:bg-green-900/30">
                     <FaCheck className="text-green-500" />
                   </div>
                   <span className="text-gray-700 dark:text-gray-200">
@@ -126,7 +126,7 @@ export default function CarDetails({ car }) {
               href={car.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="inline-flex gap-2 items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               View More Details
               <FaExternalLinkAlt className="w-4 h-4" />

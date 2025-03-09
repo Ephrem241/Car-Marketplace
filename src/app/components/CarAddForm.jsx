@@ -4,12 +4,14 @@ import { useUser } from "@clerk/nextjs";
 import { Alert, Button } from "flowbite-react";
 import CarFormFields from "./shared/CarFormFields";
 import ImageUpload from "./shared/ImageUpload";
+import { validateCarData, validateImageFile } from "@/utils/validation";
 
 export default function CarAddForm() {
   const { user } = useUser();
   const [publishError, setPublishError] = useState(null);
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [fields, setFields] = useState({
     kph: "",
     carClass: "",
@@ -32,34 +34,19 @@ export default function CarAddForm() {
     let newValue = value;
 
     if (type === "number") {
-      switch (name) {
-        case "year":
-          const yearNum = parseInt(value);
-          const currentYear = new Date().getFullYear();
-          if (!yearNum || yearNum < 1900 || yearNum > currentYear + 1) {
-            newValue = "";
-          } else {
-            newValue = yearNum;
-          }
-          break;
-        case "price":
-          const priceNum = parseFloat(value);
-          newValue = !isNaN(priceNum) && priceNum >= 0 ? priceNum : "";
-          break;
-        case "kph":
-          const kphNum = parseInt(value);
-          newValue = !isNaN(kphNum) && kphNum >= 0 ? kphNum : "";
-          break;
-        case "mileage":
-          const mileageNum = parseInt(value);
-          newValue = !isNaN(mileageNum) && mileageNum >= 0 ? mileageNum : "";
-          break;
-        default:
-          newValue = value ? Number(value) : "";
+      const numValue = Number(value);
+      if (!isNaN(numValue)) {
+        newValue = numValue;
+      } else {
+        newValue = "";
       }
     }
 
     setFields((prevFields) => ({ ...prevFields, [name]: newValue }));
+    // Clear error when field is modified
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleFeaturesChange = (e) => {
@@ -76,56 +63,23 @@ export default function CarAddForm() {
     e.preventDefault();
     setIsSubmitting(true);
     setPublishError(null);
+    setFieldErrors({});
 
-    // Validate required fields
-    const requiredFields = [
-      "make",
-      "model",
-      "year",
-      "price",
-      "kph",
-      "mileage",
-      "carClass",
-      "drive",
-      "fuel_type",
-      "transmission",
-      "description",
-    ];
-
-    const missingFields = requiredFields.filter((field) => !fields[field]);
-    if (missingFields.length > 0) {
-      setPublishError({
-        type: "error",
-        message: `Please fill in all required fields: ${missingFields.join(
-          ", "
-        )}`,
-      });
+    // Validate form data
+    const validation = validateCarData(fields);
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
       setIsSubmitting(false);
       return;
     }
-
-    if (fields.images.length === 0) {
-      setPublishError({
-        type: "error",
-        message: "Please upload at least one image",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (isSubmitting) return;
 
     try {
-      // Convert numeric fields
-      const numericFields = ["year", "price", "kph", "mileage"];
       const formattedData = {
         ...fields,
-        ...Object.fromEntries(
-          Object.entries(fields).map(([key, value]) => [
-            key,
-            numericFields.includes(key) ? Number(value) : value,
-          ])
-        ),
+        year: Number(fields.year),
+        price: Number(fields.price),
+        kph: Number(fields.kph),
+        mileage: Number(fields.mileage),
       };
 
       const response = await fetch("/api/cars", {
@@ -144,24 +98,9 @@ export default function CarAddForm() {
       router.push(`/cars/${data._id}`);
     } catch (error) {
       console.error("Add car error:", error);
-      let errorMessage = "Failed to add car";
-
-      if (error.message) {
-        errorMessage = error.message;
-      }
-
-      if (error.response) {
-        try {
-          const errorData = await error.response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          errorMessage = `${errorMessage} (Status: ${error.response.status})`;
-        }
-      }
-
       setPublishError({
         type: "error",
-        message: errorMessage,
+        message: error.message || "Failed to add car",
       });
     } finally {
       setIsSubmitting(false);
@@ -171,7 +110,7 @@ export default function CarAddForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-2xl p-6 mx-auto bg-white rounded-lg shadow-md dark:bg-gray-800"
+      className="p-6 mx-auto max-w-2xl bg-white rounded-lg shadow-md dark:bg-gray-800"
     >
       <h2 className="mb-6 text-3xl font-semibold text-center text-gray-800 dark:text-white">
         Add Car
@@ -179,6 +118,7 @@ export default function CarAddForm() {
 
       <CarFormFields
         fields={fields}
+        errors={fieldErrors}
         handleChange={handleChange}
         handleFeaturesChange={handleFeaturesChange}
       />
@@ -188,13 +128,19 @@ export default function CarAddForm() {
         onImagesChange={(newImages) =>
           setFields((prev) => ({ ...prev, images: newImages }))
         }
+        validateFile={validateImageFile}
+        error={fieldErrors.images}
       />
 
-      {publishError && <Alert color="failure">{publishError.message}</Alert>}
+      {publishError && (
+        <Alert color="failure" className="mt-4">
+          {publishError.message}
+        </Alert>
+      )}
 
       <Button
         type="submit"
-        className="w-full mt-6"
+        className="mt-6 w-full"
         disabled={isSubmitting}
         gradientDuoTone="purpleToBlue"
       >

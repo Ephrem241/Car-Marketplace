@@ -1,37 +1,42 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { initAdmin } from "@/firebase-admin";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { rateLimitMiddleware } from "@/utils/rateLimit";
 
 // Initialize Firebase Admin if not already initialized
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    }),
-  });
-}
+initAdmin();
 
 export async function POST(request) {
   try {
-    const { userId } = await request.json();
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimitMiddleware(
+      request,
+      50,
+      "firebase-token"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
+    // Get the authenticated user from Clerk
+    const { userId } = auth();
+    const user = await currentUser();
+
+    if (!userId || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Generate a custom token
+    // Generate a custom token using the Clerk user ID
     const customToken = await getAuth().createCustomToken(userId);
 
     return NextResponse.json({ token: customToken });
   } catch (error) {
-    console.error("Error generating Firebase token:", error);
+    console.error("Firebase token generation error:", error);
     return NextResponse.json(
-      { error: "Failed to generate token" },
+      {
+        error: "Failed to generate Firebase token",
+        details:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
+      },
       { status: 500 }
     );
   }

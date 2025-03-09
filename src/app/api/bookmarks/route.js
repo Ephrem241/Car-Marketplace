@@ -1,29 +1,47 @@
 import { NextResponse } from "next/server";
 import connect from "../../../lib/mongodb/mongoose.js";
-import User from "../../../lib/models/user.model.js";
-import Car from "../../../lib/models/car.model.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
-import { Types } from "mongoose";
 import Bookmark from "../../../lib/models/bookmark.model.js";
+import { rateLimitMiddleware } from "@/utils/rateLimit";
+import { addSecurityHeaders } from "@/utils/apiHeaders";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/bookmarks
 export async function POST(request) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimitMiddleware(
+      request,
+      10,
+      "bookmark-create"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     await connect();
     const sessionUser = await getSessionUser();
 
     if (!sessionUser) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+      );
+    }
+
+    // Check if user is admin
+    if (sessionUser.isAdmin) {
+      return addSecurityHeaders(
+        NextResponse.json(
+          { error: "Admins cannot bookmark cars" },
+          { status: 403 }
+        )
+      );
     }
 
     const { carId } = await request.json();
 
     if (!carId) {
-      return NextResponse.json(
-        { error: "Car ID is required" },
-        { status: 400 }
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Car ID is required" }, { status: 400 })
       );
     }
 
@@ -33,9 +51,8 @@ export async function POST(request) {
     });
 
     if (existingBookmark) {
-      return NextResponse.json(
-        { error: "Car already bookmarked" },
-        { status: 400 }
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Car already bookmarked" }, { status: 400 })
       );
     }
 
@@ -45,12 +62,11 @@ export async function POST(request) {
     });
 
     await bookmark.save();
-    return NextResponse.json(bookmark, { status: 201 });
+    return addSecurityHeaders(NextResponse.json(bookmark, { status: 201 }));
   } catch (error) {
     console.error("Error creating bookmark:", error);
-    return NextResponse.json(
-      { error: "Failed to create bookmark" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Failed to create bookmark" }, { status: 500 })
     );
   }
 }
@@ -63,6 +79,14 @@ export async function GET(request) {
 
     if (!sessionUser) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (sessionUser.isAdmin) {
+      return NextResponse.json(
+        { error: "Admins cannot view bookmarks" },
+        { status: 403 }
+      );
     }
 
     const bookmarks = await Bookmark.find({ userId: sessionUser.id })
@@ -86,6 +110,14 @@ export async function DELETE(request) {
 
     if (!sessionUser) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (sessionUser.isAdmin) {
+      return NextResponse.json(
+        { error: "Admins cannot delete bookmarks" },
+        { status: 403 }
+      );
     }
 
     const { carId } = await request.json();

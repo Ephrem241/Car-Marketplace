@@ -1,18 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { FaBookmark } from "react-icons/fa";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "react-toastify";
+import debounce from "lodash/debounce";
 
 export default function BookmarkButton({ car }) {
   const { isSignedIn, user } = useUser();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Function to extract car ID
-  const getCarId = () =>
-    typeof car === "object" && car !== null ? car._id || car.id : car;
+  const getCarId = useCallback(
+    () => (typeof car === "object" && car !== null ? car._id || car.id : car),
+    [car]
+  );
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -44,7 +48,9 @@ export default function BookmarkButton({ car }) {
     checkBookmarkStatus();
   }, [car, isSignedIn]);
 
-  const handleClick = async () => {
+  const handleClick = useCallback(async () => {
+    if (isProcessing) return;
+
     if (!isSignedIn) {
       toast.error("Please login to bookmark cars");
       return;
@@ -55,6 +61,7 @@ export default function BookmarkButton({ car }) {
     }
 
     try {
+      setIsProcessing(true);
       const id = getCarId();
       if (!id) {
         toast.error("Invalid car ID");
@@ -72,13 +79,24 @@ export default function BookmarkButton({ car }) {
         setIsBookmarked(data.isBookmarked);
         toast.success(data.message);
       } else {
-        toast.error(data.error || "Failed to update bookmark");
+        if (res.status === 429) {
+          toast.error("Too many requests. Please try again later.");
+        } else {
+          toast.error(data.error || "Failed to update bookmark");
+        }
       }
     } catch (error) {
       console.error("Error updating bookmark:", error);
       toast.error("Something went wrong");
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [isSignedIn, user, getCarId, isProcessing]);
+
+  const debouncedHandleClick = useMemo(
+    () => debounce(handleClick, 300),
+    [handleClick]
+  );
 
   if (loading) {
     return (
@@ -88,8 +106,10 @@ export default function BookmarkButton({ car }) {
 
   return (
     <button
-      onClick={handleClick}
+      onClick={debouncedHandleClick}
+      disabled={isProcessing}
       className={`flex items-center justify-center w-full px-4 py-2 font-bold text-white rounded-full transition 
+        ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
         ${
           isBookmarked
             ? "bg-red-500 hover:bg-red-600"
@@ -97,7 +117,11 @@ export default function BookmarkButton({ car }) {
         }`}
     >
       <FaBookmark className="mr-2" />
-      {isBookmarked ? "Remove Bookmark" : "Bookmark Car"}
+      {isProcessing
+        ? "Processing..."
+        : isBookmarked
+        ? "Remove Bookmark"
+        : "Bookmark Car"}
     </button>
   );
 }

@@ -17,7 +17,10 @@ export default function Header() {
         href="/"
         className="self-center text-sm font-semibold whitespace-nowrap sm:text-xl dark:text-white"
       >
-        <span className="px-2 py-1 text-white rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+        <span
+          className="px-2 py-1 text-white rounded-lg"
+          style={{ backgroundColor: "rgb(233, 199,88,255)" }}
+        >
           GODE & MILLION
         </span>
         CAR MARKET
@@ -42,7 +45,13 @@ export default function Header() {
         </SignedIn>
         <SignedOut>
           <Link href="/sign-in">
-            <Button gradientDuoTone="purpleToBlue" outline>
+            <Button
+              style={{
+                backgroundColor: "rgb(233, 199,88,255)",
+                color: "white",
+              }}
+              className="hover:bg-opacity-90"
+            >
               Sign In
             </Button>
           </Link>
