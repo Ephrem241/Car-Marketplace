@@ -1,15 +1,24 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import CarCard from "./CarCard";
 import Link from "next/link";
 import { fetchCars } from "@/utils/requests";
 
-export default async function HomeCars() {
-  const data = await fetchCars();
+export default function HomeCars() {
+  const [recentCars, setRecentCars] = useState([]);
 
-  // Sort by creation date and get the 3 most recent cars
-  const recentCars = data.cars
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 3);
+  useEffect(() => {
+    const loadCars = async () => {
+      const data = await fetchCars();
+      const sortedCars = data.cars
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 3);
+      setRecentCars(sortedCars);
+    };
+
+    loadCars();
+  }, []);
 
   return (
     <>
