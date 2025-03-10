@@ -17,6 +17,11 @@ export default function SearchResults() {
   const searchQuery = searchParams.get("q");
   const fuel = searchParams.get("fuel");
   const transmission = searchParams.get("transmission");
+  const carClass = searchParams.get("class");
+  const minPrice = searchParams.get("minPrice");
+  const maxPrice = searchParams.get("maxPrice");
+  const minYear = searchParams.get("minYear");
+  const maxYear = searchParams.get("maxYear");
 
   useEffect(() => {
     const fetchSearchResults = async () => {
@@ -25,24 +30,39 @@ export default function SearchResults() {
         if (searchQuery) params.append("q", searchQuery);
         if (fuel) params.append("fuel", fuel);
         if (transmission) params.append("transmission", transmission);
+        if (carClass) params.append("class", carClass);
+        if (minPrice) params.append("minPrice", minPrice);
+        if (maxPrice) params.append("maxPrice", maxPrice);
+        if (minYear) params.append("minYear", minYear);
+        if (maxYear) params.append("maxYear", maxYear);
 
         const response = await fetch(`/api/cars/search?${params}`);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch search results");
+          throw new Error(`Search failed: ${response.statusText}`);
         }
 
         const data = await response.json();
         setCars(data.cars || []);
       } catch (error) {
-        console.log(error);
-        setCars([]); // Set empty array on error
+        console.error("Search error:", error);
+        setCars([]);
+        // TODO: Add proper error state handling and user notification
       } finally {
         setLoading(false);
       }
     };
     fetchSearchResults();
-  }, [searchQuery, fuel, transmission]);
+  }, [
+    searchQuery,
+    fuel,
+    transmission,
+    carClass,
+    minPrice,
+    maxPrice,
+    minYear,
+    maxYear,
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

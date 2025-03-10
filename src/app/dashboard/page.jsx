@@ -29,7 +29,11 @@ export default function Dashboard() {
   }, [searchParams, user?.publicMetadata?.isAdmin]);
 
   if (!isLoaded) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-[80vh] bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
