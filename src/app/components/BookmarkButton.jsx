@@ -6,11 +6,33 @@ import { useUser } from "@clerk/nextjs";
 import { toast } from "react-toastify";
 import debounce from "lodash/debounce";
 
+// Add timeout promise
+const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if (error.name === "AbortError") {
+      throw new Error("Request timeout");
+    }
+    throw error;
+  }
+};
+
 export default function BookmarkButton({ car }) {
   const { isSignedIn, user } = useUser();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
 
   // Function to extract car ID
   const getCarId = useCallback(
@@ -28,25 +50,42 @@ export default function BookmarkButton({ car }) {
       try {
         const id = getCarId();
         if (!id) {
+          setError("Invalid car ID");
           toast.error("Invalid car ID");
           return;
         }
 
-        const res = await fetch(`/api/bookmarks/check/${id}`);
+        const res = await fetchWithTimeout(`/api/bookmarks/check/${id}`);
+
         if (res.ok) {
           const data = await res.json();
           setIsBookmarked(data.isBookmarked);
+          setError(null);
+        } else {
+          if (res.status === 408) {
+            setError("Request timed out");
+            toast.error("Request timed out, please try again");
+          } else {
+            setError("Failed to check bookmark status");
+            toast.error("Failed to check bookmark status");
+          }
         }
       } catch (error) {
         console.error("Error checking bookmark status:", error);
-        toast.error("Failed to check bookmark status");
+        if (error.message === "Request timeout") {
+          setError("Request timed out");
+          toast.error("Request timed out, please try again");
+        } else {
+          setError("Failed to check bookmark status");
+          toast.error("Failed to check bookmark status");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     checkBookmarkStatus();
-  }, [car, isSignedIn]);
+  }, [car, isSignedIn, getCarId]);
 
   const handleClick = useCallback(async () => {
     if (isProcessing) return;
@@ -68,7 +107,7 @@ export default function BookmarkButton({ car }) {
         return;
       }
 
-      const res = await fetch("/api/bookmarks", {
+      const res = await fetchWithTimeout("/api/bookmarks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ carId: id }),
@@ -77,17 +116,29 @@ export default function BookmarkButton({ car }) {
       const data = await res.json();
       if (res.ok) {
         setIsBookmarked(data.isBookmarked);
+        setError(null);
         toast.success(data.message);
       } else {
         if (res.status === 429) {
+          setError("Too many requests");
           toast.error("Too many requests. Please try again later.");
+        } else if (res.status === 408) {
+          setError("Request timed out");
+          toast.error("Request timed out, please try again");
         } else {
+          setError(data.error || "Failed to update bookmark");
           toast.error(data.error || "Failed to update bookmark");
         }
       }
     } catch (error) {
       console.error("Error updating bookmark:", error);
-      toast.error("Something went wrong");
+      if (error.message === "Request timeout") {
+        setError("Request timed out");
+        toast.error("Request timed out, please try again");
+      } else {
+        setError("Something went wrong");
+        toast.error("Something went wrong");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -101,6 +152,18 @@ export default function BookmarkButton({ car }) {
   if (loading) {
     return (
       <p className="text-center text-gray-500 animate-pulse">Loading...</p>
+    );
+  }
+
+  if (error && !isProcessing) {
+    return (
+      <button
+        onClick={debouncedHandleClick}
+        className="flex items-center justify-center w-full px-4 py-2 font-bold text-white bg-gray-500 rounded-full hover:bg-gray-600 transition"
+      >
+        <FaBookmark className="mr-2" />
+        Retry
+      </button>
     );
   }
 
