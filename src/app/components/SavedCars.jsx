@@ -15,12 +15,18 @@ export default function SavedCars() {
     const fetchSavedCars = async () => {
       try {
         const response = await fetch("/api/bookmarks");
-        const data = await response.json();
+        const bookmarks = await response.json();
 
         if (response.ok) {
-          setCars(data.cars || []);
+          // Extract car data from bookmarks and ensure carId is populated
+          const validCars = bookmarks
+            .filter(
+              (bookmark) => bookmark.carId && typeof bookmark.carId === "object"
+            )
+            .map((bookmark) => bookmark.carId);
+          setCars(validCars);
         } else {
-          toast.error(data.error || "Failed to fetch saved cars");
+          toast.error(bookmarks.error || "Failed to fetch saved cars");
         }
       } catch (error) {
         console.error("Error fetching saved cars:", error);
@@ -39,6 +45,16 @@ export default function SavedCars() {
 
   if (!isLoaded) {
     return <Spinner loading={true} />;
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full py-7">
+        <h1 className="text-2xl font-semibold">
+          Please sign in to view saved cars
+        </h1>
+      </div>
+    );
   }
 
   if (user?.publicMetadata?.isAdmin) {

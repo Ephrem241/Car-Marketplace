@@ -4,6 +4,7 @@ import { getSessionUser } from "@/utils/getSessionUser.js";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { RateLimiter } from "@/utils/rateLimit";
+import User from "../../../lib/models/user.model.js";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,15 @@ export async function GET() {
 
 export const POST = async (request) => {
   try {
-    // Apply rate limiting
+    await connect();
+
+    const sessionUser = await getSessionUser();
+
+    if (!sessionUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Apply rate limiting after we have the sessionUser
     try {
       await limiter.check(request, 10, `message-send-${sessionUser.id}`);
     } catch {
@@ -49,14 +58,6 @@ export const POST = async (request) => {
         { error: "Rate limit exceeded" },
         { status: 429 }
       );
-    }
-
-    await connect();
-
-    const sessionUser = await getSessionUser();
-
-    if (!sessionUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { name, email, phone, message, recipient, car } =
@@ -115,6 +116,7 @@ export const POST = async (request) => {
         { status: 403 }
       );
     }
+
     const newMessage = new Message({
       sender: sessionUser.id,
       recipient,
@@ -128,7 +130,7 @@ export const POST = async (request) => {
       readAt: null,
     });
 
-    await newMessage.validate(); // Explicit validation
+    await newMessage.validate();
     const savedMessage = await newMessage.save();
 
     return NextResponse.json({
