@@ -50,12 +50,21 @@ export async function POST(request) {
       carId,
     });
 
+    // If bookmark exists, remove it (unbookmark)
     if (existingBookmark) {
+      await Bookmark.findByIdAndDelete(existingBookmark._id);
       return addSecurityHeaders(
-        NextResponse.json({ error: "Car already bookmarked" }, { status: 400 })
+        NextResponse.json(
+          {
+            isBookmarked: false,
+            message: "Car unbookmarked successfully",
+          },
+          { status: 200 }
+        )
       );
     }
 
+    // If bookmark doesn't exist, create it
     const bookmark = new Bookmark({
       userId: sessionUser.id,
       carId,
@@ -72,9 +81,9 @@ export async function POST(request) {
       )
     );
   } catch (error) {
-    console.error("Error creating bookmark:", error);
+    console.error("Error managing bookmark:", error);
     return addSecurityHeaders(
-      NextResponse.json({ error: "Failed to create bookmark" }, { status: 500 })
+      NextResponse.json({ error: "Failed to manage bookmark" }, { status: 500 })
     );
   }
 }
