@@ -5,6 +5,7 @@ const bookmarkSchema = new mongoose.Schema(
     userId: {
       type: String,
       required: true,
+      index: true,
     },
     carId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -118,11 +118,29 @@ export async function GET(request) {
       );
     }
 
-    const bookmarks = await Bookmark.find({ userId: sessionUser.id })
-      .populate("carId")
-      .sort({ createdAt: -1 });
+    // Find bookmarks and populate car data
+    const bookmarks = await Bookmark.find({
+      userId: sessionUser.clerkId || sessionUser.id,
+    })
+      .populate({
+        path: "carId",
+        select:
+          "make model year price fuel_type transmission carClass mileage images description createdAt",
+      })
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return addSecurityHeaders(NextResponse.json(bookmarks));
+    // Filter out any bookmarks where car data couldn't be populated
+    const validBookmarks = bookmarks.filter((bookmark) => bookmark.carId);
+
+    if (bookmarks.length > 0 && validBookmarks.length === 0) {
+      console.error("No valid bookmarks found with populated car data");
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Failed to load car data" }, { status: 500 })
+      );
+    }
+
+    return addSecurityHeaders(NextResponse.json(validBookmarks));
   } catch (error) {
     console.error("Error fetching bookmarks:", error);
     return addSecurityHeaders(

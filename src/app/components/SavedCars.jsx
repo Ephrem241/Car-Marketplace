@@ -15,19 +15,28 @@ export default function SavedCars() {
     const fetchSavedCars = async () => {
       try {
         const response = await fetch("/api/bookmarks");
-        const bookmarks = await response.json();
-
-        if (response.ok) {
-          // Extract car data from bookmarks and ensure carId is populated
-          const validCars = bookmarks
-            .filter(
-              (bookmark) => bookmark.carId && typeof bookmark.carId === "object"
-            )
-            .map((bookmark) => bookmark.carId);
-          setCars(validCars);
-        } else {
-          toast.error(bookmarks.error || "Failed to fetch saved cars");
+        if (!response.ok) {
+          const error = await response.json();
+          console.error("Failed to fetch bookmarks:", error);
+          toast.error(error.error || "Failed to fetch saved cars");
+          return;
         }
+
+        const bookmarks = await response.json();
+        // Extract car data from bookmarks and ensure carId is populated
+        const validCars = bookmarks
+          .filter(
+            (bookmark) => bookmark.carId && typeof bookmark.carId === "object"
+          )
+          .map((bookmark) => bookmark.carId);
+
+        if (validCars.length === 0 && bookmarks.length > 0) {
+          console.error("No valid cars found in bookmarks:", bookmarks);
+          toast.error("Error loading saved cars");
+          return;
+        }
+
+        setCars(validCars);
       } catch (error) {
         console.error("Error fetching saved cars:", error);
         toast.error("Failed to fetch saved cars");
