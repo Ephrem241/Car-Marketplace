@@ -82,14 +82,14 @@ export default function DashboardComp() {
   }, [user]);
   return (
     <div className="p-3 md:mx-auto">
-      <div className="flex flex-wrap justify-center gap-4">
-        <div className="flex flex-col w-full gap-4 p-3 rounded-md shadow-md dark:bg-slate-800 md:w-72">
+      <div className="flex flex-wrap gap-4 justify-center">
+        <div className="dashboard-stats-card">
           <div className="flex justify-between">
-            <div className="">
+            <div>
               <h3 className="text-gray-500 uppercase text-md">Total Users</h3>
               <p className="text-2xl">{totalUsers}</p>
             </div>
-            <HiOutlineUserGroup className="p-3 text-5xl text-white bg-teal-600 rounded-full shadow-lg" />
+            <HiOutlineUserGroup className="bg-teal-600 dashboard-icon" />
           </div>
           <div className="flex gap-2 text-sm">
             <span className="flex items-center text-green-500">
@@ -100,13 +100,13 @@ export default function DashboardComp() {
           </div>
         </div>
 
-        <div className="flex flex-col w-full gap-4 p-3 rounded-md shadow-md dark:bg-slate-800 md:w-72">
+        <div className="dashboard-stats-card">
           <div className="flex justify-between">
-            <div className="">
+            <div>
               <h3 className="text-gray-500 uppercase text-md">Total Posts</h3>
               <p className="text-2xl">{totalPosts}</p>
             </div>
-            <HiDocumentText className="p-3 text-5xl text-white rounded-full shadow-lg bg-lime-600" />
+            <HiDocumentText className="bg-lime-600 dashboard-icon" />
           </div>
           <div className="flex gap-2 text-sm">
             <span className="flex items-center text-green-500">
@@ -117,8 +117,8 @@ export default function DashboardComp() {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap justify-center gap-4 py-3 mx-auto">
-        <div className="flex flex-col w-full p-2 rounded-md shadow-md md:w-auto dark:bg-gray-800">
+      <div className="flex flex-wrap gap-4 justify-center py-3 mx-auto">
+        <div className="dashboard-card">
           <div className="flex justify-between p-3 text-sm font-semibold">
             <h1 className="p-2 text-center">Recent users</h1>
             <Button outline gradientDuoTone="purpleToPink">
@@ -140,7 +140,7 @@ export default function DashboardComp() {
                         alt="user"
                         width={40}
                         height={40}
-                        className="w-10 h-10 bg-gray-500 rounded-full"
+                        className="profile-image"
                       />
                     </Table.Cell>
                     <Table.Cell>{user.username}</Table.Cell>
@@ -150,7 +150,7 @@ export default function DashboardComp() {
           </Table>
         </div>
 
-        <div className="flex flex-col w-full p-2 rounded-md shadow-md md:w-auto dark:bg-gray-800">
+        <div className="dashboard-card">
           <div className="flex justify-between p-3 text-sm font-semibold">
             <h1 className="p-2 text-center">Recent posts</h1>
             <Button outline gradientDuoTone="purpleToPink">
@@ -169,15 +169,11 @@ export default function DashboardComp() {
                   <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
                     <Table.Cell>
                       <Image
-                        src={
-                          post?.images?.[0]
-                            ? post.images[0]
-                            : "/images/default-car.jpg"
-                        }
+                        src={post?.images?.[0] ?? "/images/default-car.jpg"}
                         alt={`${post?.make || "Car"} ${post?.model || ""}`}
                         width={40}
                         height={40}
-                        className="h-10 bg-gray-500 rounded-md w-14"
+                        className="table-image"
                         onError={(e) => {
                           e.target.src = "/images/default-car.jpg";
                         }}

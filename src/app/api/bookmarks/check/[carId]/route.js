@@ -35,21 +35,33 @@ export async function GET(request, { params }) {
 
         if (!carId || !Types.ObjectId.isValid(carId)) {
           return addSecurityHeaders(
-            NextResponse.json({ isBookmarked: false }, { status: 400 })
+            NextResponse.json(
+              {
+                error: "Invalid car ID format",
+                isBookmarked: false,
+              },
+              { status: 400 }
+            )
           );
         }
 
         const sessionUser = await getSessionUser();
         if (!sessionUser) {
           return addSecurityHeaders(
-            NextResponse.json({ isBookmarked: false }, { status: 401 })
+            NextResponse.json(
+              {
+                error: "Authentication required",
+                isBookmarked: false,
+              },
+              { status: 401 }
+            )
           );
         }
 
         // Optimize query with projection and lean
         const bookmark = await Bookmark.findOne(
           {
-            userId: sessionUser.id,
+            userId: sessionUser.clerkId || sessionUser.id,
             carId: new Types.ObjectId(carId),
           },
           { _id: 1 }, // Only fetch _id field
@@ -57,7 +69,10 @@ export async function GET(request, { params }) {
         );
 
         return addSecurityHeaders(
-          NextResponse.json({ isBookmarked: !!bookmark })
+          NextResponse.json({
+            isBookmarked: !!bookmark,
+            message: bookmark ? "Car is bookmarked" : "Car is not bookmarked",
+          })
         );
       })(),
       timeoutPromise(timeout),

@@ -4,6 +4,7 @@ import { getSessionUser } from "@/utils/getSessionUser.js";
 import Bookmark from "../../../lib/models/bookmark.model.js";
 import { rateLimitMiddleware } from "@/utils/rateLimit";
 import { addSecurityHeaders } from "@/utils/apiHeaders";
+import User from "../../../lib/models/user.model.js";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +28,19 @@ export async function POST(request) {
       );
     }
 
-    // Check if user is admin
-    if (sessionUser.isAdmin) {
+    // Get user from MongoDB to check admin status
+    const user = await User.findOne({ clerkId: sessionUser.clerkId }).lean();
+
+    if (!user) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "User not found" }, { status: 401 })
+      );
+    }
+
+    if (user.isAdmin) {
       return addSecurityHeaders(
         NextResponse.json(
-          { error: "Admins cannot bookmark cars" },
+          { error: "Bookmarks not available for admin users" },
           { status: 403 }
         )
       );
@@ -45,14 +54,14 @@ export async function POST(request) {
       );
     }
 
-    const existingBookmark = await Bookmark.findOne({
-      userId: sessionUser.id,
+    // Use findOneAndDelete for atomic operation
+    const deletedBookmark = await Bookmark.findOneAndDelete({
+      userId: sessionUser.clerkId || sessionUser.id,
       carId,
     });
 
-    // If bookmark exists, remove it (unbookmark)
-    if (existingBookmark) {
-      await Bookmark.findByIdAndDelete(existingBookmark._id);
+    // If bookmark was found and deleted, return unbookmarked status
+    if (deletedBookmark) {
       return addSecurityHeaders(
         NextResponse.json(
           {
@@ -64,9 +73,9 @@ export async function POST(request) {
       );
     }
 
-    // If bookmark doesn't exist, create it
+    // If no bookmark was found, create one
     const bookmark = new Bookmark({
-      userId: sessionUser.id,
+      userId: sessionUser.clerkId || sessionUser.id,
       carId,
     });
 
@@ -108,11 +117,19 @@ export async function GET(request) {
       );
     }
 
-    // Check if user is admin
-    if (sessionUser.isAdmin) {
+    // Get user from MongoDB to check admin status
+    const user = await User.findOne({ clerkId: sessionUser.clerkId }).lean();
+
+    if (!user) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "User not found" }, { status: 401 })
+      );
+    }
+
+    if (user.isAdmin) {
       return addSecurityHeaders(
         NextResponse.json(
-          { error: "Admins cannot view bookmarks" },
+          { error: "Bookmarks not available for admin users" },
           { status: 403 }
         )
       );
@@ -163,44 +180,55 @@ export async function DELETE(request) {
     const sessionUser = await getSessionUser();
 
     if (!sessionUser) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+      );
     }
 
-    // Check if user is admin
-    if (sessionUser.isAdmin) {
-      return NextResponse.json(
-        { error: "Admins cannot delete bookmarks" },
-        { status: 403 }
+    // Get user from MongoDB to check admin status
+    const user = await User.findOne({ clerkId: sessionUser.clerkId }).lean();
+
+    if (!user) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "User not found" }, { status: 401 })
+      );
+    }
+
+    if (user.isAdmin) {
+      return addSecurityHeaders(
+        NextResponse.json(
+          { error: "Bookmarks not available for admin users" },
+          { status: 403 }
+        )
       );
     }
 
     const { carId } = await request.json();
 
     if (!carId) {
-      return NextResponse.json(
-        { error: "Car ID is required" },
-        { status: 400 }
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Car ID is required" }, { status: 400 })
       );
     }
 
     const result = await Bookmark.findOneAndDelete({
-      userId: sessionUser.id,
+      userId: sessionUser.clerkId || sessionUser.id,
       carId,
     });
 
     if (!result) {
-      return NextResponse.json(
-        { error: "Bookmark not found" },
-        { status: 404 }
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Bookmark not found" }, { status: 404 })
       );
     }
 
-    return NextResponse.json({ message: "Bookmark removed successfully" });
+    return addSecurityHeaders(
+      NextResponse.json({ message: "Bookmark removed successfully" })
+    );
   } catch (error) {
     console.error("Error removing bookmark:", error);
-    return NextResponse.json(
-      { error: "Failed to remove bookmark" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Failed to remove bookmark" }, { status: 500 })
     );
   }
 }

@@ -1,7 +1,7 @@
 import "./globals.css";
+import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import { ThemeProvider } from "next-themes";
-import ThemeCom from "./components/ThemeCom";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeModeScript } from "flowbite-react";
 import Footer from "./components/Footer";
@@ -33,16 +33,30 @@ export default function RootLayout({ children }) {
       <ClerkProvider>
         <html lang="en" suppressHydrationWarning>
           <head>
+            <link
+              rel="icon"
+              type="image/png"
+              href="/favicon-96x96.png"
+              sizes="96x96"
+            />
+            <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+            <link rel="icon" href="/favicon.ico" />
+            <link
+              rel="apple-touch-icon"
+              sizes="180x180"
+              href="/apple-touch-icon.png"
+            />
+            <link rel="manifest" href="/site.webmanifest" />
             <ThemeModeScript />
           </head>
           <body className="relative">
-            <ThemeProvider>
-              <ThemeCom>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <div className="min-h-screen text-gray-700 bg-white dark:text-gray-200 dark:bg-gray-900">
                 <Header />
                 {children}
                 <Footer />
                 <ClientToastContainer />
-              </ThemeCom>
+              </div>
             </ThemeProvider>
           </body>
         </html>

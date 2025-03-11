@@ -31,7 +31,7 @@ export default function Dashboard() {
   if (!isLoaded) {
     return (
       <div className="flex justify-center items-center min-h-[80vh] bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="w-8 h-8 rounded-full border-b-2 animate-spin border-primary"></div>
       </div>
     );
   }

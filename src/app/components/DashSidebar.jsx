@@ -41,17 +41,12 @@ export default function DashSidebar() {
   const tabs = user?.publicMetadata?.isAdmin ? adminTabs : userTabs;
 
   return (
-    <Sidebar className="w-full bg-white border-gray-200 md:w-56 dark:bg-gray-800 dark:border-gray-700 transition-colors duration-300">
+    <Sidebar className="w-full bg-white border-gray-200 transition-colors duration-300 md:w-56 dark:bg-gray-800 dark:border-gray-700">
       <Sidebar.Items>
         <Sidebar.ItemGroup className="flex flex-col gap-2">
           {user?.publicMetadata?.isAdmin && (
             <Link href="/dashboard/add">
-              <Sidebar.Item
-                icon={HiPlus}
-                as="div"
-                className="hover:bg-gray-100 dark:hover:bg-gray-700 transform hover:scale-[1.02] 
-                dark:text-gray-200 transition-all duration-200"
-              >
+              <Sidebar.Item icon={HiPlus} as="div" className="sidebar-item">
                 Post Car
               </Sidebar.Item>
             </Link>
@@ -63,26 +58,21 @@ export default function DashSidebar() {
                   active={tab === item.value}
                   icon={item.icon}
                   as="div"
-                  className={`${
+                  className={`sidebar-item ${
                     tab === item.value
                       ? "bg-gray-100 dark:bg-gray-700 shadow-sm"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-700 transform hover:scale-[1.02]"
-                  } dark:text-gray-200 flex items-center justify-between transition-all duration-200`}
+                      : ""
+                  }`}
                 >
                   {item.name}
                   {item.badge > 0 && (
-                    <span className="px-2 py-1 text-xs text-white bg-red-500 rounded-full animate-pulse">
-                      {item.badge}
-                    </span>
+                    <span className="notification-badge">{item.badge}</span>
                   )}
                 </Sidebar.Item>
               </Link>
             ))}
           </>
-          <Sidebar.Item
-            icon={HiArrowSmRight}
-            className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 transform hover:scale-[1.02] transition-all duration-200"
-          >
+          <Sidebar.Item icon={HiArrowSmRight} className="sidebar-item">
             <SignOutButton />
           </Sidebar.Item>
         </Sidebar.ItemGroup>

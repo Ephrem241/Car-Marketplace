@@ -58,7 +58,7 @@ export default function DashUsers() {
     );
   }
   return (
-    <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+    <div className="table-container">
       {loading ? (
         <div className="text-center">Loading...</div>
       ) : user?.publicMetadata?.isAdmin && users.length > 0 ? (
@@ -83,7 +83,7 @@ export default function DashUsers() {
                       alt={user.username}
                       width={40}
                       height={40}
-                      className="w-10 h-10 object-cover bg-gray-500 rounded-full"
+                      className="profile-image"
                     />
                   </Table.Cell>
                   <Table.Cell>{user.username}</Table.Cell>
@@ -100,7 +100,6 @@ export default function DashUsers() {
             ))}
           </Table>
 
-          {/* Add pagination controls */}
           <div className="flex justify-center gap-2 mt-8">
             {[...Array(pagination.pages)].map((_, idx) => (
               <button
@@ -108,10 +107,10 @@ export default function DashUsers() {
                 onClick={() =>
                   setPagination((prev) => ({ ...prev, page: idx + 1 }))
                 }
-                className={`px-3 py-1 rounded ${
+                className={`dashboard-button ${
                   pagination.page === idx + 1
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200"
+                    ? "dashboard-button-primary"
+                    : "bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
                 }`}
               >
                 {idx + 1}
