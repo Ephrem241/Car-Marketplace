@@ -14,7 +14,8 @@ import Image from "next/image";
 import PropTypes from "prop-types";
 
 const MAX_IMAGES = 4;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif"];
 
 export default function ImageUpload({ images, onImagesChange }) {
@@ -29,7 +30,7 @@ export default function ImageUpload({ images, onImagesChange }) {
     );
 
     if (invalidFiles.length > 0) {
-      return "Invalid files detected. Images must be under 5MB and be valid image files (JPG, PNG, GIF).";
+      return "Invalid files detected. Images must be under 10MB and be valid image files (JPG, PNG, GIF).";
     }
 
     const totalImages = images.length + files.length;

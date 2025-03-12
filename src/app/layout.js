@@ -10,7 +10,7 @@ import "photoswipe/dist/photoswipe.css";
 import ClientToastContainer from "./components/ClientToastContainer";
 
 export const metadata = {
-  title: "Premium Cars for Sale | Best Deals on Quality Vehicles",
+  title: "GODE & MILLION CAR MARKET | Best Deals on Quality Vehicles",
   description:
     "Find your dream car at unbeatable prices! Browse our extensive inventory of new & used cars, trucks, and SUVs. Best-in-class warranties & financing options available. Shop now!",
   keywords: [
