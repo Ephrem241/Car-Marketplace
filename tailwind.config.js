@@ -10,8 +10,8 @@ module.exports = {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ["Poppins", "sans-serif"],
+      colors: {
+        brand: "#e9c758",
       },
       gridTemplateColumns: {
         "70/30": "70% 28%",

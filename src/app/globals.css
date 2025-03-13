@@ -6,6 +6,8 @@
   .scrollbar-custom {
     scrollbar-width: thin;
     scrollbar-color: theme("colors.slate.300") theme("colors.slate.100");
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .scrollbar-custom::-webkit-scrollbar {
@@ -24,7 +26,7 @@
 
 @layer components {
   .dashboard-card {
-    @apply flex flex-col gap-4 p-3 w-full rounded-md shadow-md transition-all duration-300 dark:bg-slate-800 md:w-72 lg:w-80 xl:w-96 hover:shadow-lg;
+    @apply flex flex-col gap-4 p-3 w-full rounded-md shadow-md transition-all duration-300 dark:bg-slate-800 sm:w-64 md:w-72 lg:w-80 xl:w-96 hover:shadow-lg;
   }
 
   .dashboard-stats-card {
@@ -65,5 +67,22 @@
 
   .notification-badge {
     @apply absolute -top-1 -right-1 px-2 py-1 text-xs text-white bg-red-500 rounded-full animate-pulse;
+  }
+
+  .dashboard-button-loading {
+    @apply opacity-75 cursor-not-allowed;
+  }
+}
+
+:root {
+  --transition-duration: 200ms;
+  --border-radius: 0.5rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+@media print {
+  .dashboard-card {
+    @apply shadow-none border;
   }
 }

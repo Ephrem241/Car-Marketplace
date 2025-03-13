@@ -23,19 +23,20 @@ export default function DashPosts() {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/cars/user/${user?.publicMetadata?.userMongoId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const res = await fetch("/api/cars/get", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            page: 1,
+            limit: 100,
+          }),
+        });
         const data = await res.json();
 
         if (res.ok) {
-          setUserPosts(data);
+          setUserPosts(data.posts);
         } else {
           setError(data.message || "Failed to fetch posts");
         }
@@ -51,7 +52,7 @@ export default function DashPosts() {
     if (user?.publicMetadata?.isAdmin) {
       fetchPosts();
     }
-  }, [user?.publicMetadata?.isAdmin, user?.publicMetadata?.userMongoId]);
+  }, [user?.publicMetadata?.isAdmin]);
 
   const handleDeletePost = async () => {
     setShowModal(false);

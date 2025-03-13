@@ -1,34 +1,37 @@
 "use client";
 import { Button, Navbar } from "flowbite-react";
 import Link from "next/link";
-
-import { FaMoon, FaSun } from "react-icons/fa";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { dark, light } from "@clerk/themes";
 
+import { FaMoon, FaSun } from "react-icons/fa";
+
 export default function Header() {
   const path = usePathname();
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
+
   return (
     <Navbar className="border-b-2">
       <Link
         href="/"
-        className="self-center text-sm font-semibold whitespace-nowrap sm:text-xl dark:text-white"
+        className="self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white"
       >
-        <span
-          className="px-2 py-1 text-white rounded-lg"
-          style={{ backgroundColor: "rgb(233, 199,88,255)" }}
-        >
-          GODE & MILLION
+        <span className="px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white">
+          <span
+            className="px-2 py-1 text-white rounded-lg"
+            style={{ backgroundColor: "rgb(233, 199,88,255)" }}
+          >
+            GODE & MILLION
+          </span>
+          CAR MARKET
         </span>
-        CAR MARKET
       </Link>
-
       <div className="flex gap-2 md:order-2">
         <Button
-          className="hidden w-12 h-10 sm:inline"
+          className="w-12 h-10 hidden sm:inline"
           color="gray"
           pill
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
@@ -40,24 +43,17 @@ export default function Header() {
             appearance={{
               baseTheme: theme === "light" ? light : dark,
             }}
-            userProfileUrl="/dashboard?tap=profile"
+            userProfileUrl="/dashboard?tab=profile"
           />
         </SignedIn>
         <SignedOut>
           <Link href="/sign-in">
-            <Button
-              style={{
-                backgroundColor: "rgb(233, 199,88,255)",
-                color: "white",
-              }}
-              className="hover:bg-opacity-90"
-            >
-              Sign In
-            </Button>
+            <Button outline>Sign In</Button>
           </Link>
         </SignedOut>
         <Navbar.Toggle />
       </div>
+
       <Navbar.Collapse>
         <Link href="/">
           <Navbar.Link active={path === "/"} as={"div"}>

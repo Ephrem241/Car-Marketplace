@@ -7,7 +7,8 @@ import { ThemeModeScript } from "flowbite-react";
 import Footer from "./components/Footer";
 import { GlobalProvider } from "@/context/GlobalContext";
 import "photoswipe/dist/photoswipe.css";
-import ClientToastContainer from "./components/ClientToastContainer";
+
+import ThemeCom from "./components/ThemeCom";
 
 export const metadata = {
   title: "GODE & MILLION CAR MARKET | Best Deals on Quality Vehicles",
@@ -49,14 +50,13 @@ export default function RootLayout({ children }) {
             <link rel="manifest" href="/site.webmanifest" />
             <ThemeModeScript />
           </head>
-          <body className="relative">
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <div className="min-h-screen text-gray-700 bg-white dark:text-gray-200 dark:bg-gray-900">
+          <body>
+            <ThemeProvider>
+              <ThemeCom>
                 <Header />
                 {children}
                 <Footer />
-                <ClientToastContainer />
-              </div>
+              </ThemeCom>
             </ThemeProvider>
           </body>
         </html>
