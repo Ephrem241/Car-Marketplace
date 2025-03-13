@@ -1,25 +1,18 @@
-"use client";
-
-import { Table } from "flowbite-react";
 import { useEffect, useState } from "react";
-import { FaCheck, FaTimes } from "react-icons/fa";
-import { useUser } from "@clerk/nextjs";
+import { Table } from "flowbite-react";
 import Image from "next/image";
-export default function DashUsers() {
-  const { user, isLoaded } = useUser();
+import { FaCheck, FaTimes } from "react-icons/fa";
+
+export default function DashUsers({ user, isLoaded }) {
   const [users, setUsers] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pages: 1,
-    total: 0,
-  });
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1 });
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/user/get", {
+        const res = await fetch("/api/users", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -41,6 +34,7 @@ export default function DashUsers() {
         setLoading(false);
       }
     };
+
     if (user?.publicMetadata?.isAdmin) {
       fetchUsers();
     }
@@ -57,6 +51,7 @@ export default function DashUsers() {
       </div>
     );
   }
+
   return (
     <div className="table-container">
       {loading ? (
@@ -71,9 +66,12 @@ export default function DashUsers() {
               <Table.HeadCell>Email</Table.HeadCell>
               <Table.HeadCell>Admin</Table.HeadCell>
             </Table.Head>
-            {users.map((user) => (
-              <Table.Body className="divide-y" key={user._id}>
-                <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
+            <Table.Body className="divide-y">
+              {users.map((user) => (
+                <Table.Row
+                  className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                  key={user._id}
+                >
                   <Table.Cell>
                     {new Date(user.createdAt).toLocaleDateString()}
                   </Table.Cell>
@@ -96,8 +94,8 @@ export default function DashUsers() {
                     )}
                   </Table.Cell>
                 </Table.Row>
-              </Table.Body>
-            ))}
+              ))}
+            </Table.Body>
           </Table>
 
           <div className="flex justify-center gap-2 mt-8">

@@ -22,6 +22,15 @@
   .scrollbar-custom::-webkit-scrollbar-thumb {
     @apply rounded-full bg-slate-300 dark:bg-slate-500 hover:bg-slate-400 dark:hover:bg-slate-400;
   }
+
+  .animate-fadeInUp {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  .animate-fadeInUp-delayed {
+    animation: fadeInUp 0.5s ease-out forwards;
+    animation-delay: calc(var(--delay, 0) * 0.2s);
+  }
 }
 
 @layer components {
@@ -30,11 +39,11 @@
   }
 
   .dashboard-stats-card {
-    @apply flex flex-col gap-4 p-4 w-full bg-white rounded-lg shadow-md transition-all duration-300 dark:bg-slate-800 md:w-72 lg:w-80 hover:shadow-lg;
+    @apply dashboard-card bg-white p-4 rounded-lg;
   }
 
   .table-container {
-    @apply overflow-x-scroll p-3 table-auto md:mx-auto scrollbar-custom;
+    @apply overflow-x-auto p-3 table-auto md:mx-auto scrollbar-custom max-w-full;
   }
 
   .sidebar-item {
@@ -79,6 +88,17 @@
   --border-radius: 0.5rem;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media print {

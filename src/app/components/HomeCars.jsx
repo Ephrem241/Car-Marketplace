@@ -53,13 +53,8 @@ export default function HomeCars() {
               recentCars.map((car, index) => (
                 <div
                   key={car._id}
-                  className="transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl"
-                  style={{
-                    animation: `fadeInUp 0.5s ease-out forwards ${
-                      index * 0.2
-                    }s`,
-                    opacity: 0,
-                  }}
+                  className="transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl animate-fadeInUp-delayed"
+                  style={{ "--delay": index }}
                 >
                   <CarCard car={car} />
                 </div>
