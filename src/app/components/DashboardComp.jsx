@@ -130,10 +130,14 @@ export default function DashboardComp() {
               <Table.HeadCell>User image</Table.HeadCell>
               <Table.HeadCell>Username</Table.HeadCell>
             </Table.Head>
-            {users &&
-              users.map((user) => (
-                <Table.Body key={user._id} className="divide-y">
-                  <Table.Row className="bg-white dark:border-gray-700 dark:bg-gray-800">
+
+            <Table.Body className="divide-y">
+              {users &&
+                users.map((user) => (
+                  <Table.Row
+                    key={user._id}
+                    className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                  >
                     <Table.Cell>
                       <Image
                         src={user.profilePicture}
@@ -145,8 +149,8 @@ export default function DashboardComp() {
                     </Table.Cell>
                     <Table.Cell>{user.username}</Table.Cell>
                   </Table.Row>
-                </Table.Body>
-              ))}
+                ))}
+            </Table.Body>
           </Table>
         </div>
 

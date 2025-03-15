@@ -120,16 +120,14 @@ export default function DashPosts() {
                     </Table.Cell>
                     <Table.Cell>
                       <Link href={`/cars/${car._id}`}>
-                        <Image
-                          src={car?.images?.[0] ?? "/images/default-car.jpg"}
-                          alt={`${car?.make || "Car"} ${car?.model || ""}`}
-                          width={40}
-                          height={40}
-                          className="table-image"
-                          onError={(e) => {
-                            e.target.src = "/images/default-car.jpg";
-                          }}
-                        />
+                        <div className="relative w-12 h-12">
+                          <Image
+                            src={car?.images?.[0] ?? "/images/default-car.jpg"}
+                            alt={`${car?.make || "Car"} ${car?.model || ""}`}
+                            fill
+                            className="table-image object-cover"
+                          />
+                        </div>
                       </Link>
                     </Table.Cell>
                     <Table.Cell>

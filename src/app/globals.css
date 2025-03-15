@@ -47,7 +47,15 @@
   }
 
   .sidebar-item {
-    @apply flex items-center p-2 rounded-lg transition-all duration-200 transform cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105;
+    @apply relative flex items-center p-2 rounded-lg transition-all duration-200 transform cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105;
+  }
+
+  .featured-card {
+    @apply relative flex flex-col h-full overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-xl hover:shadow-xl hover:scale-[1.02] group-hover:scale-110 dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .car-grid {
+    @apply grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8;
   }
 
   .dashboard-icon {

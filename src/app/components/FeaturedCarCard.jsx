@@ -1,14 +1,18 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 export default function FeaturedCarCard({ car }) {
+  const [imageError, setImageError] = useState(false);
   return (
     <div className="relative flex flex-col h-full overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-xl hover:shadow-xl hover:scale-[1.02] group-hover:scale-110 dark:bg-gray-800 dark:border-gray-700">
       {/* Image Container */}
       <div className="relative w-full aspect-[16/10] overflow-hidden">
         <Image
-          src={car.images[0] || "/images/default-car.jpg"}
+          src={imageError ? "/images/default-car.jpg" : car.images[0]}
+          onError={() => setImageError(true)}
           alt={`${car.make} ${car.model}`}
           fill
           className="object-cover transition-transform duration-500 hover:scale-110"
@@ -45,10 +49,10 @@ export default function FeaturedCarCard({ car }) {
             <div key={index} className="flex gap-2 items-center">
               <Image
                 src={item.icon}
-                width={20}
-                height={20}
+                width={24}
+                height={24}
                 alt=""
-                className="opacity-75"
+                className="object-contain transition-transform duration-500 group-hover:scale-105"
               />
               <span className="text-sm text-gray-600 dark:text-gray-300">
                 {item.text}
