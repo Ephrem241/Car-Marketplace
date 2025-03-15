@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { Table } from "flowbite-react";
 import Image from "next/image";
-import { FaCheck, FaTimes } from "react-icons/fa";
+import { FaCheck, FaTimes, FaSort } from "react-icons/fa";
 
 export default function DashUsers({ user, isLoaded }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sort, setSort] = useState("desc");
   const [pagination, setPagination] = useState({ page: 1, pages: 1 });
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
+        setError(null);
         const res = await fetch("/api/users", {
           method: "POST",
           headers: {
@@ -20,16 +23,19 @@ export default function DashUsers({ user, isLoaded }) {
           body: JSON.stringify({
             page: pagination.page,
             limit: 10,
-            userMongoId: user?.publicMetadata?.userMongoId,
+            sort: sort,
           }),
         });
         const data = await res.json();
-        if (res.ok) {
+        if (data.success) {
           setUsers(data.users);
           setPagination(data.pagination);
+        } else {
+          setError(data.error || "Failed to fetch users");
         }
       } catch (error) {
-        console.log(error.message);
+        console.error("Error fetching users:", error);
+        setError("Failed to fetch users. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -38,16 +44,24 @@ export default function DashUsers({ user, isLoaded }) {
     if (user?.publicMetadata?.isAdmin) {
       fetchUsers();
     }
-  }, [
-    user?.publicMetadata?.isAdmin,
-    pagination.page,
-    user?.publicMetadata?.userMongoId,
-  ]);
+  }, [user?.publicMetadata?.isAdmin, pagination.page, sort]);
+
+  const toggleSort = () => {
+    setSort((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
 
   if (!user?.publicMetadata?.isAdmin && isLoaded) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full py-7">
         <h1 className="text-2xl font-semibold">You are not an admin!</h1>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full py-7">
+        <p className="text-red-500">{error}</p>
       </div>
     );
   }
@@ -60,7 +74,19 @@ export default function DashUsers({ user, isLoaded }) {
         <>
           <Table hoverable className="shadow-md">
             <Table.Head>
-              <Table.HeadCell>Date created</Table.HeadCell>
+              <Table.HeadCell>
+                <button
+                  onClick={toggleSort}
+                  className="flex items-center gap-2 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  Date created
+                  <FaSort
+                    className={`transition-transform ${
+                      sort === "asc" ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+              </Table.HeadCell>
               <Table.HeadCell>User image</Table.HeadCell>
               <Table.HeadCell>Username</Table.HeadCell>
               <Table.HeadCell>Email</Table.HeadCell>

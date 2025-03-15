@@ -3,10 +3,10 @@ import { headers } from "next/headers";
 import User from "../lib/models/user.model.js";
 import connect from "../lib/mongodb/mongoose.js";
 
-export const getSessionUser = async () => {
+export async function getSessionUser() {
   try {
     // Get headers first and await them
-    await headers();
+    const headersList = await headers();
 
     // Then get the current user
     const user = await currentUser();
@@ -20,25 +20,26 @@ export const getSessionUser = async () => {
     await connect();
 
     // Get the MongoDB user data and convert to plain object
-    const userMongoId = await User.findOne({ clerkId: user.id }).lean();
+    const mongoUser = await User.findOne({ clerkId: user.id }).lean();
 
-    if (!userMongoId) {
+    if (!mongoUser) {
       console.log("No MongoDB user found for Clerk ID:", user.id);
       return null;
     }
 
-    // Create a plain object with only the necessary fields
-    const sessionUser = {
-      id: userMongoId._id.toString(), // Convert ObjectId to string
+    // Create a session user with data from both Clerk and MongoDB
+    return {
+      id: mongoUser._id.toString(),
       clerkId: user.id,
-      isAdmin: userMongoId.isAdmin,
       email: user.emailAddresses[0]?.emailAddress,
-      username: user.username || userMongoId.username,
+      username: mongoUser.username,
+      firstName: mongoUser.firstName,
+      lastName: mongoUser.lastName,
+      isAdmin: mongoUser.isAdmin,
+      profilePicture: mongoUser.profilePicture,
     };
-
-    return sessionUser;
   } catch (error) {
     console.error("Error in getSessionUser:", error);
     return null;
   }
-};
+}

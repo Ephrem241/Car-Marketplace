@@ -1,5 +1,5 @@
-import CarSearch from "../components/CarSearch";
 import Cars from "../components/Cars";
+import CarSearch from "../components/CarSearch";
 
 export default async function CarsPage() {
   return (

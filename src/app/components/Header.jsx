@@ -14,13 +14,13 @@ export default function Header() {
   const router = useRouter();
 
   return (
-    <Navbar className="border-b-2">
+    <Navbar className="border-b-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900">
       <Link
         href="/"
-        className="self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white"
+        className="self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white dark:hover:text-gray-300 "
       >
         <span className="px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white flex items-center gap-2">
-          <span className="px-2 py-1 bg-amber-400 rounded-lg">
+          <span className="px-2 py-1 bg-amber-400 rounded-lg ">
             GODE & MILLION
           </span>
           CAR MARKET
@@ -28,7 +28,7 @@ export default function Header() {
       </Link>
       <div className="flex gap-2 md:order-2">
         <Button
-          className="w-12 h-10 hidden sm:inline"
+          className="w-12 h-10 hidden sm:inline "
           color="gray"
           pill
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
