@@ -15,6 +15,13 @@ export default function DashUsers({ user, isLoaded }) {
       try {
         setLoading(true);
         setError(null);
+        console.log("Fetching users...", {
+          isAdmin: user?.publicMetadata?.isAdmin,
+          userId: user?.id,
+          page: pagination.page,
+          sort: sort,
+        });
+
         const res = await fetch("/api/users", {
           method: "POST",
           headers: {
@@ -26,12 +33,27 @@ export default function DashUsers({ user, isLoaded }) {
             sort: sort,
           }),
         });
+
         const data = await res.json();
+        console.log("API Response:", {
+          success: data.success,
+          usersCount: data.users?.length,
+          totalUsers: data.totalUsers,
+          pagination: data.pagination,
+          error: data.error,
+        });
+
         if (data.success) {
+          if (!Array.isArray(data.users)) {
+            console.error("Users data is not an array:", data.users);
+            setError("Invalid data format received from server");
+            return;
+          }
           setUsers(data.users);
           setPagination(data.pagination);
         } else {
           setError(data.error || "Failed to fetch users");
+          console.error("API Error:", data.error);
         }
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -43,8 +65,10 @@ export default function DashUsers({ user, isLoaded }) {
 
     if (user?.publicMetadata?.isAdmin) {
       fetchUsers();
+    } else {
+      console.log("User is not admin:", user);
     }
-  }, [user?.publicMetadata?.isAdmin, pagination.page, sort]);
+  }, [user?.publicMetadata?.isAdmin, pagination.page, sort, user]);
 
   const toggleSort = () => {
     setSort((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -103,11 +127,11 @@ export default function DashUsers({ user, isLoaded }) {
                   </Table.Cell>
                   <Table.Cell>
                     <Image
-                      src={user.profilePicture}
+                      src={user.profilePicture || "/default-avatar.png"}
                       alt={user.username}
                       width={40}
                       height={40}
-                      className="profile-image"
+                      className="profile-image rounded-full"
                     />
                   </Table.Cell>
                   <Table.Cell>{user.username}</Table.Cell>
@@ -143,7 +167,7 @@ export default function DashUsers({ user, isLoaded }) {
           </div>
         </>
       ) : (
-        <p>You have no users yet!</p>
+        <p className="text-center py-7">No users found in the database.</p>
       )}
     </div>
   );

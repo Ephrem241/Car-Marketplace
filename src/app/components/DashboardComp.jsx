@@ -23,7 +23,7 @@ export default function DashboardComp() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch("/api/user/get", {
+        const res = await fetch("/api/users", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

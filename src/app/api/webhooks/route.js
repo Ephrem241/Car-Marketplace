@@ -7,6 +7,7 @@ export async function POST(req) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
 
   if (!SIGNING_SECRET) {
+    console.error("Missing SIGNING_SECRET in environment variables");
     throw new Error(
       "Error: Please add SIGNING_SECRET from Clerk Dashboard to .env or .env.local"
     );
@@ -23,6 +24,11 @@ export async function POST(req) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
+    console.error("Missing Svix headers:", {
+      svix_id,
+      svix_timestamp,
+      svix_signature,
+    });
     return new Response("Error: Missing Svix headers", {
       status: 400,
     });
@@ -48,8 +54,7 @@ export async function POST(req) {
     });
   }
 
-  // Do something with payload
-  // For this guide, log payload to console
+  // Log webhook event
   const { id } = evt?.data;
   const eventType = evt?.type;
   console.log(`Received webhook with ID ${id} and event type of ${eventType}`);
@@ -60,6 +65,14 @@ export async function POST(req) {
       evt?.data;
 
     try {
+      console.log("Processing user creation/update:", {
+        id,
+        first_name,
+        last_name,
+        email: email_addresses[0]?.email_address,
+        username,
+      });
+
       const user = await createOrUpdateUser(
         id,
         first_name,
@@ -68,8 +81,15 @@ export async function POST(req) {
         email_addresses,
         username
       );
+
       if (user && eventType === "user.created") {
         try {
+          console.log("Updating Clerk user metadata:", {
+            userId: id,
+            mongoId: user._id,
+            isAdmin: user.isAdmin,
+          });
+
           await clerkClient.users.updateUserMetadata(id, {
             publicMetadata: {
               userMongoId: user._id,
@@ -77,11 +97,11 @@ export async function POST(req) {
             },
           });
         } catch (error) {
-          console.log("Error updating user metadata:", error);
+          console.error("Error updating user metadata:", error);
         }
       }
     } catch (error) {
-      console.log("Error creating or updating user:", error);
+      console.error("Error creating or updating user:", error);
       return new Response("Error creating or updating user", {
         status: 400,
       });
@@ -91,9 +111,10 @@ export async function POST(req) {
   if (eventType === "user.deleted") {
     const { id } = evt?.data;
     try {
+      console.log("Processing user deletion:", id);
       await deleteUser(id);
     } catch (error) {
-      console.log("Error deleting user:", error);
+      console.error("Error deleting user:", error);
       return new Response("Error deleting user", {
         status: 400,
       });

@@ -47,7 +47,7 @@ export default function Dashboard() {
           <>
             {tab === "profile" && <DashProfile />}
             {tab === "posts" && <DashPosts />}
-            {tab === "users" && <DashUsers />}
+            {tab === "users" && <DashUsers user={user} isLoaded={isLoaded} />}
             {tab === "messages" && <DashMessages />}
 
             {tab === "dash" && <DashboardComp />}

@@ -2,7 +2,7 @@ import connect from "../../../lib/mongodb/mongoose.js";
 import Car from "../../../lib/models/car.model.js";
 import { getSessionUser } from "@/utils/getSessionUser.js";
 import { NextResponse } from "next/server";
-// Adjust import path to your Firebase config
+
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { storage } from "@/firebase.js";
