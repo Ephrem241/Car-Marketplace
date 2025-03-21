@@ -13,7 +13,7 @@ import { Button, FileInput } from "flowbite-react";
 import Image from "next/image";
 import PropTypes from "prop-types";
 
-const MAX_IMAGES = 4;
+const MAX_IMAGES = 12;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif"];

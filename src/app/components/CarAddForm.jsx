@@ -35,15 +35,11 @@ export default function CarAddForm() {
 
     if (type === "number") {
       const numValue = Number(value);
-      if (!isNaN(numValue)) {
-        newValue = numValue;
-      } else {
-        newValue = "";
-      }
+      newValue = !isNaN(numValue) ? numValue : "";
     }
 
     setFields((prevFields) => ({ ...prevFields, [name]: newValue }));
-    // Clear error when field is modified
+
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -65,7 +61,6 @@ export default function CarAddForm() {
     setPublishError(null);
     setFieldErrors({});
 
-    // Validate form data
     const validation = validateCarData(fields);
     if (!validation.isValid) {
       setFieldErrors(validation.errors);
@@ -74,20 +69,27 @@ export default function CarAddForm() {
     }
 
     try {
-      const formattedData = {
-        ...fields,
-        year: Number(fields.year),
-        price: Number(fields.price),
-        kph: Number(fields.kph),
-        mileage: Number(fields.mileage),
-      };
+      const formData = new FormData();
+
+      Object.entries(fields).forEach(([key, value]) => {
+        if (key === "images") {
+          fields.images.forEach((file) => {
+            if (file instanceof File) {
+              formData.append("images", file);
+            }
+          });
+        } else if (key === "features") {
+          fields.features.forEach((feature) =>
+            formData.append("features", feature)
+          );
+        } else {
+          formData.append(key, value);
+        }
+      });
 
       const response = await fetch("/api/cars", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedData),
+        body: formData,
       });
 
       const data = await response.json();
@@ -106,7 +108,6 @@ export default function CarAddForm() {
       setIsSubmitting(false);
     }
   };
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -130,6 +131,7 @@ export default function CarAddForm() {
         }
         validateFile={validateImageFile}
         error={fieldErrors.images}
+        maxFiles={12}
       />
 
       {publishError && (

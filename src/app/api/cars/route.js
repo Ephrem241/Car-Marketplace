@@ -199,36 +199,31 @@ export const POST = async (request) => {
         );
       }
 
-      const formDataObj = Object.fromEntries(formData.entries());
-      const validation = validateCarData({
-        ...formDataObj,
-        images: validImageUrls,
-        features: formData.getAll("features"),
-      });
-
-      if (!validation.isValid) {
-        return NextResponse.json(
-          { error: "Validation failed", details: validation.errors },
-          { status: 400 }
-        );
-      }
-
       carData = {
-        make: formDataObj.make,
-        model: formDataObj.model,
-        year: Number(formDataObj.year),
-        price: Number(formDataObj.price),
-        description: formDataObj.description,
-        carClass: formDataObj.carClass,
-        drive: formDataObj.drive,
-        fuel_type: formDataObj.fuel_type,
-        transmission: formDataObj.transmission,
-        kph: Number(formDataObj.kph),
-        mileage: Number(formDataObj.mileage),
+        make: formData.get("make"),
+        model: formData.get("model"),
+        year: Number(formData.get("year")),
+        price: Number(formData.get("price")),
+        description: formData.get("description"),
+        carClass: formData.get("carClass"),
+        drive: formData.get("drive"),
+        fuel_type: formData.get("fuel_type"),
+        transmission: formData.get("transmission"),
+        kph: Number(formData.get("kph")),
+        mileage: Number(formData.get("mileage")),
         features: formData.getAll("features"),
         images: validImageUrls,
-        link: formDataObj.link,
+        link: formData.get("link"),
+        createdBy: user.publicMetadata.userMongoId,
       };
+    }
+
+    const validation = validateCarData(carData);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validation.errors },
+        { status: 400 }
+      );
     }
 
     carData.createdBy = user.publicMetadata.userMongoId;

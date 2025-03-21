@@ -40,16 +40,9 @@ export default function CarImages({ images }) {
               )}
             </Item>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {validImages.map((image, index) => (
-                <div
-                  key={index}
-                  className={`${
-                    validImages.length === 3 && index === 2
-                      ? "col-span-2"
-                      : "col-span-1"
-                  }`}
-                >
+                <div key={index} className="relative aspect-square">
                   <Item
                     original={image}
                     thumbnail={image}
@@ -62,11 +55,11 @@ export default function CarImages({ images }) {
                         onClick={open}
                         src={image}
                         alt={`Car image ${index + 1}`}
-                        className="object-cover h-[400px] w-full rounded-xl"
+                        className="object-cover h-full w-full rounded-xl cursor-zoom-in"
                         width={1000}
                         height={600}
-                        priority={index === 0}
-                        loading={index > 0 ? "lazy" : "eager"}
+                        priority={index < 3}
+                        loading={index > 2 ? "lazy" : "eager"}
                       />
                     )}
                   </Item>

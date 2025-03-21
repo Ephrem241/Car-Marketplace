@@ -1,6 +1,5 @@
 import React from "react";
 import Image from "next/image";
-import InfoBoxes from "./InfoBoxes";
 
 export default function Hero() {
   return (
