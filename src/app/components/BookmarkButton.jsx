@@ -39,6 +39,7 @@ export default function BookmarkButton({ car }) {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   // Function to extract car ID
   const getCarId = useCallback(
@@ -150,11 +151,12 @@ export default function BookmarkButton({ car }) {
       return;
     }
 
-    try {
-      setIsProcessing(true);
-      const previousState = isBookmarked;
-      setIsBookmarked(!previousState);
+    // Optimistic update
+    setIsProcessing(true);
+    const previousState = isBookmarked;
+    setIsBookmarked(!previousState);
 
+    try {
       // Add retry logic for the bookmark operation
       const bookmarkOperation = async () => {
         const res = await fetchWithTimeout("/api/bookmarks", {
@@ -174,7 +176,8 @@ export default function BookmarkButton({ car }) {
       setError(null);
       toast.success(data.message);
     } catch (error) {
-      setIsBookmarked(isBookmarked); // Revert to the original state
+      // Revert optimistic update on error
+      setIsBookmarked(previousState);
       console.warn("Error updating bookmark:", error);
 
       if (error.message === "Request timeout") {

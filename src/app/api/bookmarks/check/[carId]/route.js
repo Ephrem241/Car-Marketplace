@@ -58,6 +58,19 @@ export async function GET(request, { params }) {
           );
         }
 
+        // Add admin check
+        if (sessionUser.publicMetadata?.isAdmin) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              {
+                error: "Admins are not allowed to bookmark cars",
+                isBookmarked: false,
+              },
+              { status: 403 }
+            )
+          );
+        }
+
         // Optimize query with projection and lean
         const bookmark = await Bookmark.findOne(
           {
@@ -65,7 +78,11 @@ export async function GET(request, { params }) {
             carId: new Types.ObjectId(carId),
           },
           { _id: 1 }, // Only fetch _id field
-          { lean: true, maxTimeMS: 3000 } // Add query timeout
+          {
+            lean: true,
+            maxTimeMS: 3000,
+            // Add cache options here
+          }
         );
 
         return addSecurityHeaders(
