@@ -3,11 +3,9 @@ import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import { ThemeProvider } from "next-themes";
 import { ClerkProvider } from "@clerk/nextjs";
-import { ThemeModeScript } from "flowbite-react";
 import Footer from "./components/Footer";
 import { GlobalProvider } from "@/context/GlobalContext";
 import "photoswipe/dist/photoswipe.css";
-
 import ThemeCom from "./components/ThemeCom";
 
 export const metadata = {
@@ -26,6 +24,9 @@ export const metadata = {
     "trucks for sale",
     "luxury cars",
   ],
+  icons: {
+    icon: "/icon/Favicon1234.png",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -33,14 +34,11 @@ export default function RootLayout({ children }) {
     <GlobalProvider>
       <ClerkProvider>
         <html lang="en" suppressHydrationWarning>
-          <head>
-            <ThemeModeScript />
-          </head>
           <body>
-            <ThemeProvider>
+            <ThemeProvider attribute="class">
               <ThemeCom>
                 <Header />
-                {children}
+                <main>{children}</main>
                 <Footer />
               </ThemeCom>
             </ThemeProvider>

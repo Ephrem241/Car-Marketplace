@@ -58,6 +58,10 @@ export default function CarUpdateForm({ id }) {
     setPublishError(null);
 
     try {
+      if (fields.images.length > 12) {
+        throw new Error("Maximum of 12 images allowed");
+      }
+
       const numericFields = ["year", "price", "kph", "mileage"];
       const formattedData = {
         ...fields,
@@ -166,9 +170,16 @@ export default function CarUpdateForm({ id }) {
 
           <ImageUpload
             images={fields.images}
-            onImagesChange={(newImages) =>
-              setFields((prev) => ({ ...prev, images: newImages }))
-            }
+            onImagesChange={(newImages) => {
+              if (newImages.length > 12) {
+                setPublishError({
+                  type: "error",
+                  message: "Maximum of 12 images allowed",
+                });
+                return;
+              }
+              setFields((prev) => ({ ...prev, images: newImages }));
+            }}
           />
 
           {publishError && (

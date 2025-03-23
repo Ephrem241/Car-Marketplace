@@ -16,7 +16,7 @@ import PropTypes from "prop-types";
 const MAX_IMAGES = 12;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 export default function ImageUpload({ images, onImagesChange }) {
   const [files, setFiles] = useState([]);

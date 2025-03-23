@@ -88,9 +88,9 @@ export async function PUT(request, { params }) {
     }
 
     // Validate image count
-    if (data.images && data.images.length > 4) {
+    if (data.images && data.images.length > 12) {
       return NextResponse.json(
-        { error: "Maximum of 4 images allowed" },
+        { error: "Maximum of 12 images allowed" },
         { status: 400 }
       );
     }
