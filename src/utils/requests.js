@@ -1,6 +1,6 @@
 const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || "";
 
-async function fetchCars({ ShowFeatured = false } = {}) {
+export const fetchCars = async ({ ShowFeatured = false } = {}) => {
   try {
     const baseUrl =
       typeof window !== "undefined" ? window.location.origin : apiDomain;
@@ -35,7 +35,15 @@ async function fetchCars({ ShowFeatured = false } = {}) {
     console.error("Error fetching cars:", error);
     return { cars: [] };
   }
-}
+};
+
+export const fetchCarById = async (id) => {
+  const response = await fetch(`/api/cars/${id}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch car details");
+  }
+  return response.json();
+};
 
 async function fetchCar(id) {
   try {
@@ -61,4 +69,4 @@ async function fetchCar(id) {
   }
 }
 
-export { fetchCars, fetchCar };
+export { fetchCar };
