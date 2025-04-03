@@ -1,10 +1,12 @@
+"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Alert, Button } from "flowbite-react";
 import CarFormFields from "./shared/CarFormFields";
 import ImageUpload from "./shared/ImageUpload";
-import { validateCarData, validateImageFile } from "@/utils/validation";
+import { validateCarData } from "@/utils/validation";
 
 export default function CarAddForm() {
   const { user } = useUser();
@@ -55,6 +57,40 @@ export default function CarAddForm() {
     }));
   };
 
+  const handleImageUpload = async (files) => {
+    if (!files.length) return;
+    setIsSubmitting(true);
+
+    try {
+      const uploadedImages = await Promise.all(
+        files.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Upload failed");
+
+          return data.url;
+        })
+      );
+
+      setFields((prevFields) => ({
+        ...prevFields,
+        images: [...prevFields.images, ...uploadedImages],
+      }));
+    } catch (error) {
+      console.error("Upload error:", error);
+      setPublishError({ message: "Image upload failed. Please try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -69,45 +105,25 @@ export default function CarAddForm() {
     }
 
     try {
-      const formData = new FormData();
-
-      Object.entries(fields).forEach(([key, value]) => {
-        if (key === "images") {
-          fields.images.forEach((file) => {
-            if (file instanceof File) {
-              formData.append("images", file);
-            }
-          });
-        } else if (key === "features") {
-          fields.features.forEach((feature) =>
-            formData.append("features", feature)
-          );
-        } else {
-          formData.append(key, value);
-        }
-      });
-
       const response = await fetch("/api/cars", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(fields),
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to add car");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to add car");
 
       router.push(`/cars/${data._id}`);
     } catch (error) {
-      console.error("Add car error:", error);
-      setPublishError({
-        type: "error",
-        message: error.message || "Failed to add car",
-      });
+      setPublishError({ message: error.message });
     } finally {
       setIsSubmitting(false);
     }
   };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -124,15 +140,7 @@ export default function CarAddForm() {
         handleFeaturesChange={handleFeaturesChange}
       />
 
-      <ImageUpload
-        images={fields.images}
-        onImagesChange={(newImages) =>
-          setFields((prev) => ({ ...prev, images: newImages }))
-        }
-        validateFile={validateImageFile}
-        error={fieldErrors.images}
-        maxFiles={12}
-      />
+      <ImageUpload images={fields.images} onUpload={handleImageUpload} />
 
       {publishError && (
         <Alert color="failure" className="mt-4">

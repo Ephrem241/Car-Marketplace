@@ -1,17 +1,13 @@
 import connect from "../../../lib/mongodb/mongoose.js";
 import Car from "../../../lib/models/car.model.js";
-import { getSessionUser } from "@/utils/getSessionUser.js";
-import { NextResponse } from "next/server";
 
+import { NextResponse } from "next/server";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { storage } from "@/firebase.js";
-import { getAuth } from "firebase/auth";
-import { app } from "@/firebase.js";
-import { signInToFirebase } from "@/utils/firebaseAuth.js";
-import { validateCarData, validateImageFile } from "@/utils/validation";
-import { rateLimitMiddleware } from "@/utils/rateLimit";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { rateLimitMiddleware } from "@/utils/rateLimit";
+import { validateCarData } from "@/utils/validation";
 
 export async function GET(request) {
   try {
@@ -34,11 +30,9 @@ export async function GET(request) {
       50,
       Math.max(1, parseInt(searchParams.get("pageSize")) || 9)
     );
-
     const skip = (page - 1) * pageSize;
 
     const query = {};
-
     if (q?.trim()) {
       query.$or = [
         { make: { $regex: q.trim(), $options: "i" } },
@@ -46,43 +40,37 @@ export async function GET(request) {
         { description: { $regex: q.trim(), $options: "i" } },
       ];
     }
-
-    if (fuel?.trim()) {
-      query.fuel_type = fuel.trim();
-    }
-
-    if (transmission?.trim()) {
-      query.transmission = transmission.trim();
-    }
+    if (fuel?.trim()) query.fuel_type = fuel.trim();
+    if (transmission?.trim()) query.transmission = transmission.trim();
 
     const [total, cars] = await Promise.all([
       Car.countDocuments(query),
       Car.find(query).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
     ]);
 
-    if (!cars) {
-      return NextResponse.json({ error: "No cars found" }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      total,
-      cars,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
-    });
+    return NextResponse.json(
+      { total, cars, page, pageSize, totalPages: Math.ceil(total / pageSize) },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching cars:", error);
     return NextResponse.json(
-      {
-        error: "Failed to fetch cars",
-        details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
-      },
+      { error: "Failed to fetch cars" },
       { status: 500 }
     );
   }
 }
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export const POST = async (request) => {
   try {
@@ -93,132 +81,35 @@ export const POST = async (request) => {
     );
     if (rateLimitResponse) return rateLimitResponse;
 
+    const contentLength = request.headers.get("content-length") || 0;
+    if (contentLength > 100000) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+    }
+
     await connect();
 
-    // Get the authenticated user from Clerk
     const { userId } = auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check for admin status in Clerk metadata
     const user = await currentUser();
-    if (!user?.publicMetadata?.isAdmin) {
+    if (!userId || !user?.publicMetadata?.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    let carData;
-    const contentType = request.headers.get("content-type");
-
-    if (contentType?.includes("application/json")) {
-      const jsonData = await request.json();
-      const validation = validateCarData(jsonData);
-      if (!validation.isValid) {
-        return NextResponse.json(
-          { error: "Validation failed", details: validation.errors },
-          { status: 400 }
-        );
-      }
-      carData = {
-        make: jsonData.make,
-        model: jsonData.model,
-        year: Number(jsonData.year),
-        price: Number(jsonData.price),
-        description: jsonData.description,
-        carClass: jsonData.carClass,
-        drive: jsonData.drive,
-        fuel_type: jsonData.fuel_type,
-        transmission: jsonData.transmission,
-        kph: Number(jsonData.kph),
-        mileage: Number(jsonData.mileage),
-        features: jsonData.features || [],
-        images: jsonData.images || [],
-        link: jsonData.link,
-      };
-    } else {
-      const auth = getAuth(app);
-      const firebaseUser = !auth.currentUser
-        ? await signInToFirebase()
-        : auth.currentUser;
-
-      if (!firebaseUser) {
-        return NextResponse.json(
-          { error: "Failed to authenticate with storage service" },
-          { status: 500 }
-        );
-      }
-
-      const formData = await request.formData();
-      const imageFiles = formData.getAll("images");
-
-      for (const file of imageFiles) {
-        if (!(file instanceof File)) continue;
-        const validation = validateImageFile(file);
-        if (!validation.isValid) {
-          return NextResponse.json(
-            { error: "Image validation failed", details: validation.errors },
-            { status: 400 }
-          );
-        }
-      }
-
-      const uploadPromises = imageFiles.map(async (file) => {
-        if (!(file instanceof File)) return null;
-
-        try {
-          const storageRef = ref(
-            storage,
-            `car-images/${uuidv4()}-${file.name}`
-          );
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          const metadata = {
-            contentType: file.type,
-            metadata: {
-              lastUpload: new Date().toISOString(),
-              uploadedBy: userId,
-            },
-          };
-
-          const snapshot = await uploadBytes(storageRef, uint8Array, metadata);
-          return await getDownloadURL(snapshot.ref);
-        } catch (error) {
-          console.error("Upload error:", error);
-          return null;
-        }
-      });
-
-      const uploadResults = await Promise.all(uploadPromises);
-      const validImageUrls = uploadResults.filter((url) => url !== null);
-
-      if (validImageUrls.length === 0) {
-        return NextResponse.json(
-          { error: "Failed to upload images" },
-          { status: 500 }
-        );
-      }
-
-      carData = {
-        make: formData.get("make"),
-        model: formData.get("model"),
-        year: Number(formData.get("year")),
-        price: Number(formData.get("price")),
-        description: formData.get("description"),
-        carClass: formData.get("carClass"),
-        drive: formData.get("drive"),
-        fuel_type: formData.get("fuel_type"),
-        transmission: formData.get("transmission"),
-        kph: Number(formData.get("kph")),
-        mileage: Number(formData.get("mileage")),
-        features: formData.getAll("features"),
-        images: validImageUrls,
-        link: formData.get("link"),
-        createdBy: user.publicMetadata.userMongoId,
-      };
+    if (!user?.publicMetadata?.userMongoId) {
+      return NextResponse.json(
+        { error: "User identity configuration error" },
+        { status: 500 }
+      );
     }
 
-    const validation = validateCarData(carData);
+    const contentType = request.headers.get("content-type");
+    if (!contentType?.includes("application/json")) {
+      return NextResponse.json(
+        { error: "Invalid content type - only JSON accepted" },
+        { status: 415 }
+      );
+    }
+
+    const jsonData = await request.json();
+    const validation = validateCarData(jsonData);
     if (!validation.isValid) {
       return NextResponse.json(
         { error: "Validation failed", details: validation.errors },
@@ -226,26 +117,37 @@ export const POST = async (request) => {
       );
     }
 
-    carData.createdBy = user.publicMetadata.userMongoId;
-    const newCar = new Car(carData);
+    const sanitizeString = (str) => str.replace(/[<>$]/g, "");
+    const sanitizedData = Object.fromEntries(
+      Object.entries(jsonData).map(([key, value]) => [
+        key,
+        typeof value === "string" ? sanitizeString(value) : value,
+      ])
+    );
+
+    if (jsonData.images) {
+      const uploadedImages = await Promise.all(
+        jsonData.images.map(async (image) => {
+          const imageRef = ref(storage, `cars/${uuidv4()}`);
+          const snapshot = await uploadBytes(imageRef, image);
+          return getDownloadURL(snapshot.ref);
+        })
+      );
+      sanitizedData.images = uploadedImages;
+    }
+
+    const newCar = new Car({
+      ...sanitizedData,
+      createdBy: user.publicMetadata.userMongoId,
+    });
     await newCar.save();
 
     return NextResponse.json(
-      {
-        message: "Car Added Successfully",
-        _id: newCar._id,
-      },
+      { message: "Car Added Successfully", _id: newCar._id },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error adding car:", error);
-    return NextResponse.json(
-      {
-        error: error.message || "Failed to add car",
-        details:
-          process.env.NODE_ENV === "development" ? error.stack : undefined,
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to add car" }, { status: 500 });
   }
 };

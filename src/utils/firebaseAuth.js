@@ -1,17 +1,13 @@
-import { getAuth, signInWithCustomToken } from "firebase/auth";
-import { app } from "@/firebase";
+import { signInWithCustomToken } from "firebase/auth";
+import { auth } from "@/firebase";
 
 export async function signInToFirebase() {
   try {
-    const auth = getAuth(app);
+    // 1. Removed invalid useUser() hook
+    if (auth.currentUser) return auth.currentUser;
 
-    // Get the custom token from your backend
-    const response = await fetch("/api/auth/firebase-token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    // 2. Fixed try/catch structure
+    const response = await fetch("/api/auth/firebase", { method: "POST" });
 
     if (!response.ok) {
       const error = await response.json();
@@ -20,13 +16,14 @@ export async function signInToFirebase() {
 
     const { token } = await response.json();
 
-    // Sign in to Firebase with the custom token
-    await signInWithCustomToken(auth, token);
+    if (!token) {
+      throw new Error("No token received from server");
+    }
 
-    return auth.currentUser;
+    const userCredential = await signInWithCustomToken(auth, token);
+    return userCredential.user;
   } catch (error) {
     console.error("Firebase auth error:", error);
-    // Don't throw, just return null - let the calling code handle the absence of authentication
-    return null;
+    throw error;
   }
 }

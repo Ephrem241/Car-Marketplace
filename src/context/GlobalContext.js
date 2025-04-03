@@ -2,23 +2,25 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 
-// Create the context
-
 const GlobalContext = createContext();
-
-// Create the provider
 
 export function GlobalProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Remove the entire useEffect with interval
   useEffect(() => {
     const fetchUnreadMessages = async () => {
       try {
-        const response = await fetch("/api/messages/unread-count");
+        const response = await fetch("/api/messages/unread-count", {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
         if (response.ok) {
           const data = await response.json();
           setUnreadCount(data);
+        } else if (response.status === 401) {
+          console.log("User not authenticated");
         }
       } catch (error) {
         console.error("Error fetching unread count:", error);

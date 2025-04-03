@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getSessionUser } from "@/utils/getSessionUser";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 // Initialize Firebase Admin if not already initialized
 const FIREBASE_ADMIN_APPS = getApps();
@@ -28,17 +28,24 @@ if (!FIREBASE_ADMIN_APPS.length) {
 
 export async function POST(request) {
   try {
-    const { userId } = await request.json();
+    // Get the current user from Clerk
+    const user = await currentUser();
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
+        { error: "User must be authenticated with Clerk" },
+        { status: 401 }
       );
     }
 
-    // Generate a custom token
-    const customToken = await getAuth().createCustomToken(userId);
+    // Generate a custom token using the Clerk user ID
+    const customToken = await getAuth().createCustomToken(user.id, {
+      // Add Clerk user metadata as custom claims
+      email: user.emailAddresses[0]?.emailAddress,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: "user",
+    });
 
     return NextResponse.json({ token: customToken });
   } catch (error) {

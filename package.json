@@ -15,7 +15,6 @@
     "alias": "^0.0.5",
     "date-fns": "^4.1.0",
     "firebase": "^11.3.0",
-    "firebase-admin": "^13.2.0",
     "flowbite-react": "^0.10.2",
     "mongodb": "^6.10.0",
     "mongoose": "^8.8.1",
@@ -37,6 +36,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/react": "19.0.12",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",

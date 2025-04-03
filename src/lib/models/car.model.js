@@ -16,7 +16,8 @@ const CarSchema = new Schema(
     carClass: {
       type: String,
       required: true,
-      enum: [ "Economy",
+      enum: [
+        "Economy",
         "Luxury",
         "Sports",
         "SUV",
@@ -29,7 +30,8 @@ const CarSchema = new Schema(
         "Wagon",
         "MPV",
         "Pickup",
-        "Other",],
+        "Other",
+      ],
     },
     description: {
       type: String,
@@ -120,10 +122,11 @@ const CarSchema = new Schema(
   }
 );
 
-// Add index for better search performance
 CarSchema.index({ make: 1, model: 1, year: -1 });
 CarSchema.index({ price: 1 });
 CarSchema.index({ isFeatured: 1 });
+CarSchema.index({ make: 1, model: 1 });
+CarSchema.index({ createdAt: -1 });
 
 const Car = models.Car || model("Car", CarSchema);
 export default Car;

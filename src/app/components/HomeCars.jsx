@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import CarCard from "./CarCard";
 import Link from "next/link";
+
 import { fetchCars } from "@/utils/requests";
-import Image from "next/image";
 
 export default function HomeCars() {
   const [recentCars, setRecentCars] = useState([]);

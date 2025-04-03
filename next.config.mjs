@@ -18,14 +18,15 @@ const nextConfig = {
         pathname: "**",
       },
     ],
+    minimumCacheTTL: 60, // Cache images for 60 seconds
+    formats: ["image/avif", "image/webp"], // Optimize image loading
   },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
-      test: /\.(png|jpg|gif|svg)$/i,
+      test: /\.(png|jpe?g|gif|svg|webp)$/i,
       type: "asset/resource",
     });
 
-    // Add chunk loading timeout configuration
     if (!isServer) {
       config.watchOptions = {
         aggregateTimeout: 300,
@@ -39,6 +40,9 @@ const nextConfig = {
     }
 
     return config;
+  },
+  experimental: {
+    scrollRestoration: true,
   },
 };
 

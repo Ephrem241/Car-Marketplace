@@ -1,7 +1,12 @@
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_DESCRIPTION_LENGTH = 2000;
 export const MAX_LINK_LENGTH = 500;
-export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
 
 export const validateCarData = (data) => {
   const errors = {};
@@ -73,16 +78,13 @@ export const validateCarData = (data) => {
     }
   }
 
-  // Image validations
   if (data.images) {
     if (data.images.length === 0) {
       errors.images = "At least one image is required";
     }
-    if (data.images.length > 4) {
-      errors.images = "Maximum of 4 images allowed";
-    }
+
     for (const imageUrl of data.images) {
-      if (!/^https?:\/\//i.test(imageUrl)) {
+      if (!isValidImageUrl(imageUrl)) {
         errors.images = "Invalid image URL format";
         break;
       }
@@ -99,7 +101,7 @@ export const validateImageFile = (file) => {
   const errors = {};
 
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    errors.type = "Invalid file type. Only JPEG, PNG and WebP are allowed";
+    errors.type = "Invalid file type. Only JPEG, PNG, GIF and WebP are allowed";
   }
 
   if (file.size > MAX_FILE_SIZE) {
