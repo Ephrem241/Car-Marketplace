@@ -22,6 +22,13 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"], // Optimize image loading
   },
   webpack: (config, { isServer }) => {
+    // Add path alias
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": "/src",
+    };
+
+    // Add existing rules
     config.module.rules.push({
       test: /\.(png|jpe?g|gif|svg|webp)$/i,
       type: "asset/resource",

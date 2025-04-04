@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import CarCard from "./CarCard";
 import Link from "next/link";
-
 import { fetchCars } from "@/utils/requests";
 
 export default function HomeCars() {
@@ -14,9 +13,10 @@ export default function HomeCars() {
     const loadCars = async () => {
       try {
         const data = await fetchCars();
-        const sortedCars = data.cars
+        const sortedCars = (data.cars || [])
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .slice(0, 3);
+
         setRecentCars(sortedCars);
       } catch (error) {
         console.error("Failed to load cars:", error);

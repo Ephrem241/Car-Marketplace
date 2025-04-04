@@ -28,16 +28,17 @@ export const GET = async (request) => {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user from MongoDB to check admin status
     const user = await User.findOne({ clerkId: sessionUser.clerkId }).lean();
 
-    if (!user?.isAdmin) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const count = await Message.countDocuments({
-      readByAdmin: false,
-    });
+    const query = user.isAdmin
+      ? { readByAdmin: false }
+      : { recipient: user._id, readByAdmin: false };
+
+    const count = await Message.countDocuments(query);
 
     return NextResponse.json(count);
   } catch (error) {

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
-import { storage } from "@/firebase.js";
+import { adminStorage } from "@/lib/firebase-admin";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req) {
@@ -12,33 +11,29 @@ export async function POST(req) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const fileType = file.type || "image/jpeg";
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const bucket = adminStorage.bucket();
+    const fileName = `cars/${uuidv4()}-${file.name}`;
+    const fileUpload = bucket.file(fileName);
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(fileType)) {
-      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
-    }
-
-    const storageRef = ref(storage, `cars/${uuidv4()}`);
-    const metadata = { contentType: fileType };
-
-    const uploadTask = uploadBytesResumable(storageRef, fileBuffer, metadata);
-
-    await new Promise((resolve, reject) => {
-      uploadTask.on(
-        "state_changed",
-        null,
-        (error) => reject(error),
-        () => resolve()
-      );
+    await fileUpload.save(buffer, {
+      contentType: file.type,
+      metadata: {
+        cacheControl: "public, max-age=31536000",
+      },
     });
 
-    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+    // Make the file public
+    await fileUpload.makePublic();
 
-    return NextResponse.json({ url: downloadURL }, { status: 200 });
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`;
+
+    return NextResponse.json({ url: publicUrl }, { status: 200 });
   } catch (error) {
     console.error("File upload error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Upload failed" },
+      { status: 500 }
+    );
   }
 }

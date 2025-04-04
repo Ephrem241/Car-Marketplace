@@ -2,9 +2,7 @@ import connect from "../../../lib/mongodb/mongoose.js";
 import Car from "../../../lib/models/car.model.js";
 
 import { NextResponse } from "next/server";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { v4 as uuidv4 } from "uuid";
-import { storage } from "@/firebase.js";
+
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { rateLimitMiddleware } from "@/utils/rateLimit";
 import { validateCarData } from "@/utils/validation";
@@ -125,15 +123,8 @@ export const POST = async (request) => {
       ])
     );
 
-    if (jsonData.images) {
-      const uploadedImages = await Promise.all(
-        jsonData.images.map(async (image) => {
-          const imageRef = ref(storage, `cars/${uuidv4()}`);
-          const snapshot = await uploadBytes(imageRef, image);
-          return getDownloadURL(snapshot.ref);
-        })
-      );
-      sanitizedData.images = uploadedImages;
+    if (jsonData.images && jsonData.images.length > 0) {
+      sanitizedData.images = jsonData.images;
     }
 
     const newCar = new Car({

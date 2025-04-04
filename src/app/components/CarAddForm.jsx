@@ -90,6 +90,10 @@ export default function CarAddForm() {
       setIsSubmitting(false);
     }
   };
+  const validation = validateCarData({
+    ...fields,
+    images: fields.images || [],
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();

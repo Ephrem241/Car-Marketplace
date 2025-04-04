@@ -21,11 +21,11 @@ export default function CarDetails({ car }) {
             </p>
             <p>
               <span className="font-semibold">Price:</span> $
-              {car.price.toLocaleString()}
+              {car.price?.toLocaleString() || "N/A"}
             </p>
             <p>
-              <span className="font-semibold">Mileage:</span>{" "}
-              {car.mileage.toLocaleString()} miles
+              <span className="font-semibold">Mileage:</span>
+              {car.mileage?.toLocaleString() || "N/A"} miles
             </p>
           </div>
         </div>

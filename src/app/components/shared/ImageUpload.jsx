@@ -7,6 +7,21 @@ import Image from "next/image";
 export default function ImageUpload({ images, onUpload }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadError, setUploadError] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUpload = async () => {
+    if (!selectedFiles.length) return;
+
+    setIsUploading(true);
+    try {
+      await onUpload(selectedFiles);
+      setSelectedFiles([]);
+    } catch (error) {
+      setUploadError(error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -22,13 +37,6 @@ export default function ImageUpload({ images, onUpload }) {
 
     setSelectedFiles(validFiles);
     setUploadError(null);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFiles.length) return;
-
-    await onUpload(selectedFiles);
-    setSelectedFiles([]);
   };
 
   return (

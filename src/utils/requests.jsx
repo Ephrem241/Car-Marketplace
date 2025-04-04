@@ -14,7 +14,11 @@ export const fetchCars = async ({ ShowFeatured = false } = {}) => {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch data: ${res.statusText}`);
+      const errorData = await res.json().catch(() => null);
+      throw new Error(
+        errorData?.message ||
+          `Failed to fetch data: ${res.status} ${res.statusText}`
+      );
     }
 
     const data = await res.json();
@@ -33,7 +37,15 @@ export const fetchCars = async ({ ShowFeatured = false } = {}) => {
     };
   } catch (error) {
     console.error("Error fetching cars:", error);
-    return { cars: [] };
+    // Return empty data structure with error information
+    return {
+      cars: [],
+      error: error.message,
+      total: 0,
+      page: 1,
+      pageSize: 9,
+      totalPages: 0,
+    };
   }
 };
 
