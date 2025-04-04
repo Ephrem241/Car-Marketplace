@@ -1,14 +1,11 @@
-import {
-  cert,
-  initializeApp as initializeFirebaseAdmin,
-} from "firebase-admin/app";
+import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getStorage } from "firebase-admin/storage";
+import { getAuth } from "firebase-admin/auth";
 
-let app;
-let storage;
-
-export function initAdmin() {
-  if (!app) {
+// Initialize Firebase Admin
+function initAdmin() {
+  const apps = getApps();
+  if (!apps.length) {
     // Handle the private key properly, replacing escaped newlines
     const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
       ? process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n")
@@ -18,29 +15,24 @@ export function initAdmin() {
       throw new Error("FIREBASE_ADMIN_PRIVATE_KEY is not configured");
     }
 
-    app = initializeFirebaseAdmin({
+    return initializeApp({
       credential: cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
         privateKey: privateKey,
       }),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
-    storage = getStorage(app);
   }
-  return app;
+
+  return apps[0];
 }
 
-export function getAdminStorage() {
-  if (!storage) {
-    initAdmin();
-  }
-  return storage;
-}
+// Initialize the admin app
+const adminApp = initAdmin();
 
-// Export storage instance for backward compatibility
-export const adminStorage = {
-  get bucket() {
-    return getAdminStorage().bucket();
-  },
-};
+// Export admin services
+export const adminAuth = getAuth(adminApp);
+export const adminStorage = getStorage(adminApp);
+
+export { adminApp };

@@ -1,8 +1,6 @@
 import connect from "../../../lib/mongodb/mongoose.js";
 import Car from "../../../lib/models/car.model.js";
-
 import { NextResponse } from "next/server";
-
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { rateLimitMiddleware } from "@/utils/rateLimit";
 import { validateCarData } from "@/utils/validation";
@@ -64,13 +62,7 @@ export async function GET(request) {
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-export const POST = async (request) => {
+export async function POST(request) {
   try {
     const rateLimitResponse = await rateLimitMiddleware(
       request,
@@ -79,8 +71,9 @@ export const POST = async (request) => {
     );
     if (rateLimitResponse) return rateLimitResponse;
 
-    const contentLength = request.headers.get("content-length") || 0;
-    if (contentLength > 100000) {
+    // Check content length
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && parseInt(contentLength) > 100000) {
       return NextResponse.json({ error: "Payload too large" }, { status: 413 });
     }
 
@@ -98,6 +91,7 @@ export const POST = async (request) => {
       );
     }
 
+    // Check content type
     const contentType = request.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       return NextResponse.json(
@@ -141,4 +135,4 @@ export const POST = async (request) => {
     console.error("Error adding car:", error);
     return NextResponse.json({ error: "Failed to add car" }, { status: 500 });
   }
-};
+}

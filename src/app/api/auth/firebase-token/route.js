@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { getAuth } from "firebase-admin/auth";
-import { initAdmin } from "@/lib/firebase-admin";
+import { adminAuth } from "@/lib/firebase-admin";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { rateLimitMiddleware } from "@/utils/rateLimit";
-
-// Initialize Firebase Admin if not already initialized
-initAdmin();
 
 export async function POST(request) {
   try {
@@ -26,7 +22,7 @@ export async function POST(request) {
     }
 
     // Generate a custom token using the Clerk user ID
-    const customToken = await getAuth().createCustomToken(userId);
+    const customToken = await adminAuth.createCustomToken(userId);
 
     return NextResponse.json({ token: customToken });
   } catch (error) {
