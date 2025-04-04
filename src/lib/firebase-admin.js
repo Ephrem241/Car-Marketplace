@@ -5,6 +5,7 @@ import {
 import { getStorage } from "firebase-admin/storage";
 
 let app;
+let storage;
 
 export function initAdmin() {
   if (!app) {
@@ -18,8 +19,21 @@ export function initAdmin() {
       }),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
+    storage = getStorage(app);
   }
   return app;
 }
 
-export const adminStorage = getStorage(app);
+export function getAdminStorage() {
+  if (!storage) {
+    initAdmin();
+  }
+  return storage;
+}
+
+// Export storage instance for backward compatibility
+export const adminStorage = {
+  get bucket() {
+    return getAdminStorage().bucket();
+  },
+};

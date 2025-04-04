@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminStorage } from "@/lib/firebase-admin";
+import { getAdminStorage } from "@/lib/firebase-admin";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req) {
@@ -12,7 +12,8 @@ export async function POST(req) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const bucket = adminStorage.bucket();
+    const storage = getAdminStorage();
+    const bucket = storage.bucket();
     const fileName = `cars/${uuidv4()}-${file.name}`;
     const fileUpload = bucket.file(fileName);
 
