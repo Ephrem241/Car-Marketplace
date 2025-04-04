@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
-import { initAdmin } from "@/firebase-admin";
+import { initAdmin } from "@/lib/firebase-admin";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { rateLimitMiddleware } from "@/utils/rateLimit";
 
