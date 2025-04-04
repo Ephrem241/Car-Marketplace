@@ -9,13 +9,20 @@ let storage;
 
 export function initAdmin() {
   if (!app) {
+    // Handle the private key properly, replacing escaped newlines
+    const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
+      ? process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, "\n")
+      : undefined;
+
+    if (!privateKey) {
+      throw new Error("FIREBASE_ADMIN_PRIVATE_KEY is not configured");
+    }
+
     app = initializeFirebaseAdmin({
       credential: cert({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY
-          ? JSON.parse(`"${process.env.FIREBASE_ADMIN_PRIVATE_KEY}"`)
-          : undefined,
+        privateKey: privateKey,
       }),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
